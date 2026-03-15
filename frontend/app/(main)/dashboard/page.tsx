@@ -4,13 +4,13 @@ import { RecentActivitiesTable } from "@/components/dashboard/RecentActivitiesTa
 
 export default function DashboardPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#D9E1E1]">
+    <div className="flex min-h-screen flex-col bg-[#d0d8d8] lg:h-full lg:min-h-0">
       <DashboardHeader
         title="Dashboard"
         searchPlaceholder="Search"
         backHref="/items"
       />
-      <div className="p-6 space-y-6">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-2 px-4 py-2.5 sm:px-5 lg:px-6 lg:overflow-hidden lg:py-2">
         <ItemSummaryCards />
         <RecentActivitiesTable />
       </div>

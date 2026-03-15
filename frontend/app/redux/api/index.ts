@@ -6,3 +6,5 @@ export * from "./categoryApi";
 export * from "./stockApi";
 export * from "./assignmentApi";
 export * from "./auditApi";
+export * from "./reportsApi";
+export * from "./officeApi";

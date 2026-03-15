@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useId } from "react";
 import { cn } from "@/lib/utils";
 
 export interface CheckboxProps
@@ -8,10 +8,11 @@ export interface CheckboxProps
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   ({ className, label, id, ...props }, ref) => {
-    const inputId = id ?? `checkbox-${Math.random().toString(36).slice(2)}`;
+    const reactId = useId();
+    const inputId = id ?? `checkbox-${reactId}`;
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <input
           ref={ref}
           id={inputId}
@@ -26,7 +27,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="cursor-pointer select-none text-sm text-gray-700"
+            className="cursor-pointer select-none text-[0.94rem] text-gray-700"
           >
             {label}
           </label>
