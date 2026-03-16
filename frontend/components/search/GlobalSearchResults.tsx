@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { useGetAssignmentsQuery, useGetAuditsQuery, useGetCategoriesQuery, useGetItemsQuery, useGetStocksQuery, useGetStockTransactionsQuery } from "@/app/redux/api";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TablePagination } from "@/components/ui/TablePagination";
@@ -42,9 +41,7 @@ function getRtkErrorMessage(error: unknown) {
 }
 
 export function GlobalSearchResults({ query }: { query?: string }) {
-  const searchParams = useSearchParams();
-  const queryFromUrl = searchParams.get("q") ?? "";
-  const effectiveQuery = queryFromUrl || query || "";
+  const effectiveQuery = query || "";
   const trimmed = effectiveQuery.trim();
   const shouldSearch = Boolean(trimmed);
 
