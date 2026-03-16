@@ -71,10 +71,17 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         fixed_asset = getattr(obj, "fixed_asset", None)
         return getattr(fixed_asset, "serial_number", None)
 
-    def get_assigned_to(self, obj):
-        active_assignment = obj.assignments.filter(status=AssignmentStatus.ASSIGNED).select_related(
+    def _get_active_assignment(self, obj):
+        prefetched = getattr(obj, "prefetched_active_assignments", None)
+        if prefetched is not None:
+            return prefetched[0] if prefetched else None
+
+        return obj.assignments.filter(status=AssignmentStatus.ASSIGNED).select_related(
             "assigned_to_user", "assigned_to_office"
         ).first()
+
+    def get_assigned_to(self, obj):
+        active_assignment = self._get_active_assignment(obj)
         if not active_assignment:
             return None
         if active_assignment.assigned_to_user:
@@ -84,8 +91,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         return None
 
     def get_assignment_status(self, obj):
-        has_active = obj.assignments.filter(status=AssignmentStatus.ASSIGNED).exists()
-        return "ASSIGNED" if has_active else "UNASSIGNED"
+        return "ASSIGNED" if self._get_active_assignment(obj) else "UNASSIGNED"
 
 
 class FixedAssetSerializer(serializers.ModelSerializer):

@@ -20,29 +20,39 @@ SCOPED_ROLES = {
 def get_descendant_office_ids(root_office_id):
     if not root_office_id:
         return []
-    office_ids = {root_office_id}
-    frontier = {root_office_id}
+    children_by_parent: dict[int | None, list[int]] = {}
+    for office_id, parent_office_id in Office.objects.values_list("id", "parent_office_id"):
+        children_by_parent.setdefault(parent_office_id, []).append(office_id)
+
+    office_ids = set()
+    frontier = [root_office_id]
     while frontier:
-        child_ids = set(
-            Office.objects.filter(parent_office_id__in=frontier).values_list("id", flat=True)
-        ) - office_ids
-        if not child_ids:
-            break
-        office_ids.update(child_ids)
-        frontier = child_ids
+        current_id = frontier.pop()
+        if current_id in office_ids:
+            continue
+        office_ids.add(current_id)
+        frontier.extend(children_by_parent.get(current_id, []))
     return list(office_ids)
 
 
 def get_accessible_office_ids(user):
+    if hasattr(user, "_accessible_office_ids_cache"):
+        return user._accessible_office_ids_cache
+
     if user.is_staff or user.is_superuser:
-        return None
-    if user.role in GLOBAL_ROLES:
-        return None
-    if user.role in SCOPED_ROLES:
+        office_ids = None
+    elif user.role in GLOBAL_ROLES:
+        office_ids = None
+    elif user.role in SCOPED_ROLES:
         if user.role == UserRoles.WARD_OFFICER:
-            return [user.office_id] if user.office_id else []
-        return get_descendant_office_ids(user.office_id)
-    return []
+            office_ids = [user.office_id] if user.office_id else []
+        else:
+            office_ids = get_descendant_office_ids(user.office_id)
+    else:
+        office_ids = []
+
+    user._accessible_office_ids_cache = office_ids
+    return office_ids
 
 
 def scope_queryset_by_user(queryset, user, office_lookup):

@@ -20,6 +20,13 @@ export type RecentInventoryActivityApi = {
   action: string;
 };
 
+export type GlobalSearchResultApi = {
+  key: string;
+  kind: "Item" | "Category" | "Stock" | "Stock Movement" | "Audit Log" | "Assignment";
+  title: string;
+  details: string;
+};
+
 export const reportsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardSummary: builder.query<DashboardSummaryApi, void>({
@@ -33,10 +40,19 @@ export const reportsApi = baseApi.injectEndpoints({
       ) => unwrapListResponse(response),
       providesTags: ["RecentActivities"],
     }),
+    getGlobalSearchResults: builder.query<GlobalSearchResultApi[], { q: string; limit?: number }>({
+      query: ({ q, limit = 10 }) => ({
+        url: "reports/global-search/",
+        params: { q, limit },
+      }),
+      transformResponse: (response: GlobalSearchResultApi[] | { results: GlobalSearchResultApi[] }) =>
+        unwrapListResponse(response),
+    }),
   }),
 });
 
 export const {
   useGetDashboardSummaryQuery,
   useGetRecentInventoryActivitiesQuery,
+  useGetGlobalSearchResultsQuery,
 } = reportsApi;

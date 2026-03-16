@@ -1,12 +1,14 @@
 import csv
 import io
 
+from django.db.models import Prefetch
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from audit.models import InventoryActionType
 from audit.utils import create_inventory_audit_log, item_snapshot
+from actions.models import AssignmentStatus, ItemAssignment
 from common.access import scope_queryset_by_user
 from common.notifications import send_low_stock_alert_for_stock
 from common.permissions import IMSAccessPermission
@@ -31,7 +33,20 @@ class AssetTypeViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class InventoryItemViewSet(viewsets.ModelViewSet):
-    queryset = InventoryItem.objects.select_related("category", "office").all().order_by("id")
+    queryset = (
+        InventoryItem.objects.select_related("category", "office", "fixed_asset")
+        .prefetch_related(
+            Prefetch(
+                "assignments",
+                queryset=ItemAssignment.objects.filter(status=AssignmentStatus.ASSIGNED).select_related(
+                    "assigned_to_user", "assigned_to_office"
+                ),
+                to_attr="prefetched_active_assignments",
+            )
+        )
+        .all()
+        .order_by("id")
+    )
     serializer_class = InventoryItemSerializer
     filterset_fields = ["category", "office", "status", "item_type"]
     search_fields = ["title", "item_number", "category__name", "office__name"]

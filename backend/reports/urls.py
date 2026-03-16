@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     AssignmentSummaryByOfficeView,
     DashboardSummaryView,
+    GlobalSearchView,
     InventoryReportExportCSVView,
     InventoryReportExportExcelView,
     InventoryReportExportPDFView,
@@ -13,6 +14,7 @@ from .views import (
 
 urlpatterns = [
     path("reports/dashboard-summary/", DashboardSummaryView.as_view(), name="dashboard-summary"),
+    path("reports/global-search/", GlobalSearchView.as_view(), name="global-search"),
     path("reports/recent-inventory-activities/", RecentInventoryActivitiesView.as_view(), name="recent-inventory-activities"),
     path("reports/inventory/", InventoryReportView.as_view(), name="inventory-report"),
     path("reports/inventory/export-csv/", InventoryReportExportCSVView.as_view(), name="inventory-report-export-csv"),

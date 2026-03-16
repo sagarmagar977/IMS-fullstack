@@ -1,4 +1,4 @@
-from django.db.models import Count, F, Q
+from django.db.models import Count, Exists, F, OuterRef, Q
 from django.http import HttpResponse
 from openpyxl import Workbook
 from reportlab.lib.pagesizes import A4
@@ -9,9 +9,9 @@ from rest_framework.views import APIView
 
 from actions.models import AssignmentStatus, ItemAssignment
 from audit.models import InventoryAuditLog
+from catalog.models import Category
 from common.access import scope_queryset_by_user
-from hierarchy.models import Office
-from inventory.models import ConsumableStock, FixedAsset, InventoryItem, InventoryStatus
+from inventory.models import ConsumableStock, ConsumableStockTransaction, FixedAsset, InventoryItem, InventoryStatus
 
 
 class DashboardSummaryView(APIView):
@@ -22,25 +22,194 @@ class DashboardSummaryView(APIView):
         assignment_qs = scope_queryset_by_user(ItemAssignment.objects.all(), request.user, "item__office_id")
         stock_qs = scope_queryset_by_user(ConsumableStock.objects.all(), request.user, "item__office_id")
         fixed_qs = scope_queryset_by_user(FixedAsset.objects.all(), request.user, "item__office_id")
-        office_ids = item_qs.values_list("office_id", flat=True).distinct()
-        assigned_count = assignment_qs.filter(status=AssignmentStatus.ASSIGNED).values("item_id").distinct().count()
-        unassigned_count = max(item_qs.count() - assigned_count, 0)
+        item_counts = item_qs.aggregate(
+            total_inventory_items=Count("id"),
+            active_inventory_items=Count("id", filter=Q(status=InventoryStatus.ACTIVE)),
+            disposed_inventory_items=Count("id", filter=Q(status=InventoryStatus.DISPOSED)),
+            active_offices=Count("office_id", distinct=True),
+        )
+        assignment_counts = assignment_qs.aggregate(
+            active_assignments=Count("id", filter=Q(status=AssignmentStatus.ASSIGNED)),
+            returned_assignments=Count("id", filter=Q(status=AssignmentStatus.RETURNED)),
+            assigned_assets=Count("item_id", filter=Q(status=AssignmentStatus.ASSIGNED), distinct=True),
+        )
+        stock_counts = stock_qs.aggregate(
+            consumable_stocks=Count("id"),
+            low_stock_items=Count(
+                "id",
+                filter=Q(reorder_alert_enabled=True, quantity__lte=F("min_threshold")),
+            ),
+        )
+        total_items = item_counts["total_inventory_items"] or 0
+        assigned_count = assignment_counts["assigned_assets"] or 0
+        unassigned_count = max(total_items - assigned_count, 0)
         data = {
-            "total_inventory_items": item_qs.count(),
-            "active_inventory_items": item_qs.filter(status=InventoryStatus.ACTIVE).count(),
-            "disposed_inventory_items": item_qs.filter(status=InventoryStatus.DISPOSED).count(),
+            "total_inventory_items": total_items,
+            "active_inventory_items": item_counts["active_inventory_items"] or 0,
+            "disposed_inventory_items": item_counts["disposed_inventory_items"] or 0,
             "fixed_assets": fixed_qs.count(),
-            "consumable_stocks": stock_qs.count(),
-            "active_assignments": assignment_qs.filter(status=AssignmentStatus.ASSIGNED).count(),
-            "returned_assignments": assignment_qs.filter(status=AssignmentStatus.RETURNED).count(),
-            "low_stock_items": stock_qs.filter(
-                reorder_alert_enabled=True,
-                quantity__lte=F("min_threshold"),
-            ).count(),
+            "consumable_stocks": stock_counts["consumable_stocks"] or 0,
+            "active_assignments": assignment_counts["active_assignments"] or 0,
+            "returned_assignments": assignment_counts["returned_assignments"] or 0,
+            "low_stock_items": stock_counts["low_stock_items"] or 0,
             "assigned_assets": assigned_count,
             "unassigned_assets": unassigned_count,
-            "active_offices": Office.objects.filter(id__in=office_ids).count(),
+            "active_offices": item_counts["active_offices"] or 0,
         }
+        return Response(data)
+
+
+class GlobalSearchView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        query = (request.query_params.get("q") or "").strip()
+        if not query:
+            return Response([])
+
+        try:
+            limit = int(request.query_params.get("limit", 10))
+        except (TypeError, ValueError):
+            limit = 10
+        limit = min(max(limit, 1), 25)
+        active_assignment_exists = ItemAssignment.objects.filter(
+            item_id=OuterRef("pk"),
+            status=AssignmentStatus.ASSIGNED,
+        )
+
+        items = (
+            scope_queryset_by_user(
+                InventoryItem.objects.filter(Q(title__icontains=query) | Q(item_number__icontains=query)),
+                request.user,
+                "office_id",
+            )
+            .annotate(has_active_assignment=Exists(active_assignment_exists))
+            .order_by("-created_at")[:limit]
+        )
+        categories = Category.objects.filter(name__icontains=query).order_by("name")[:limit]
+        stocks = (
+            scope_queryset_by_user(
+                ConsumableStock.objects.select_related("item").filter(
+                    Q(item__title__icontains=query) | Q(item__item_number__icontains=query) | Q(unit__icontains=query)
+                ),
+                request.user,
+                "item__office_id",
+            )
+            .order_by("id")[:limit]
+        )
+        movements = (
+            scope_queryset_by_user(
+                ConsumableStockTransaction.objects.select_related("stock", "stock__item").filter(
+                    Q(stock__item__title__icontains=query)
+                    | Q(stock__item__item_number__icontains=query)
+                    | Q(description__icontains=query)
+                    | Q(department__icontains=query)
+                ),
+                request.user,
+                "stock__item__office_id",
+            )
+            .order_by("-created_at")[:limit]
+        )
+        audits = (
+            scope_queryset_by_user(
+                InventoryAuditLog.objects.select_related("item", "performed_by").filter(
+                    Q(item__title__icontains=query)
+                    | Q(item__item_number__icontains=query)
+                    | Q(remarks__icontains=query)
+                    | Q(performed_by__username__icontains=query)
+                ),
+                request.user,
+                "item__office_id",
+            )
+            .order_by("-created_at")[:limit]
+        )
+        assignments = (
+            scope_queryset_by_user(
+                ItemAssignment.objects.select_related("item").filter(
+                    Q(item__title__icontains=query)
+                    | Q(item__item_number__icontains=query)
+                    | Q(remarks__icontains=query)
+                    | Q(assigned_to_user__username__icontains=query)
+                    | Q(assigned_to_office__name__icontains=query)
+                ),
+                request.user,
+                "item__office_id",
+            )
+            .order_by("-created_at")[:limit]
+        )
+
+        data = [
+            {
+                "key": f"item-{item.id}",
+                "kind": "Item",
+                "title": item.title,
+                "details": (
+                    f"{item.item_number or '-'} | "
+                    f"{'Fixed Asset' if item.item_type == 'FIXED_ASSET' else 'Consumable'} | "
+                    f"{'ASSIGNED' if item.has_active_assignment else 'UNASSIGNED'}"
+                ),
+            }
+            for item in items
+        ]
+        data.extend(
+            {
+                "key": f"category-{category.id}",
+                "kind": "Category",
+                "title": category.name,
+                "details": "Consumable" if category.is_consumable else "Fixed Asset",
+            }
+            for category in categories
+        )
+        data.extend(
+            {
+                "key": f"stock-{stock.id}",
+                "kind": "Stock",
+                "title": stock.item.title,
+                "details": (
+                    f"{stock.item.item_number or '-'} | Qty {stock.quantity} {stock.unit} | "
+                    f"Min {stock.min_threshold} | "
+                    f"{'OUT OF STOCK' if stock.quantity <= 0 else 'LOW STOCK' if stock.quantity <= stock.min_threshold else 'ON BOARDED'}"
+                ),
+            }
+            for stock in stocks
+        )
+        data.extend(
+            {
+                "key": f"movement-{movement.id}",
+                "kind": "Stock Movement",
+                "title": movement.stock.item.title,
+                "details": (
+                    f"{movement.transaction_type.replace('_', ' ')} | "
+                    f"Qty {movement.quantity} | Balance {movement.balance_after}"
+                ),
+            }
+            for movement in movements
+        )
+        data.extend(
+            {
+                "key": f"audit-{audit.id}",
+                "kind": "Audit Log",
+                "title": audit.item.title,
+                "details": (
+                    f"{audit.action_type} | "
+                    f"{(audit.performed_by.get_full_name() or audit.performed_by.username) if audit.performed_by else '-'} | "
+                    f"{audit.remarks or '-'}"
+                ),
+            }
+            for audit in audits
+        )
+        data.extend(
+            {
+                "key": f"assignment-{assignment.id}",
+                "kind": "Assignment",
+                "title": assignment.item.title,
+                "details": (
+                    f"{assignment.status} | Assign till {assignment.assign_till or '-'} | "
+                    f"{assignment.created_at.date().isoformat()}"
+                ),
+            }
+            for assignment in assignments
+        )
         return Response(data)
 
 

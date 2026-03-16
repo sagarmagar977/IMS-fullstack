@@ -44,6 +44,12 @@ class ReportExportTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsInstance(response.data, list)
 
+    def test_global_search_endpoint_returns_merged_results(self):
+        response = self.client.get("/api/reports/global-search/?q=lap")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(any(row["kind"] == "Item" for row in response.data))
+        self.assertTrue(any(row["kind"] == "Category" for row in response.data))
+
     def test_periodic_inventory_report_generation_task_creates_report(self):
         result = periodic_inventory_report_generation()
         report = GeneratedReport.objects.get(id=result["report_id"])
