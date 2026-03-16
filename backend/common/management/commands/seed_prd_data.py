@@ -41,6 +41,25 @@ DEFAULT_ASSIGNMENT_TARGET = 180
 DEFAULT_PASSWORD = "ims12345"
 SEED_MARKER = "PRD-DUMMY"
 
+SEED_PROFILES = {
+    "full": {
+        "provinces": PROVINCES,
+        "ward_total": WARD_TOTAL,
+        "default_items": DEFAULT_ITEM_TARGET,
+        "default_assignments": DEFAULT_ASSIGNMENT_TARGET,
+    },
+    "compact": {
+        "provinces": [
+            ("Koshi Province Office", "NPL-P01", 3),
+            ("Bagmati Province Office", "NPL-P03", 3),
+            ("Lumbini Province Office", "NPL-P05", 3),
+        ],
+        "ward_total": 90,
+        "default_items": 180,
+        "default_assignments": 60,
+    },
+}
+
 CUSTOM_FIELDS = [
     ("Laptop", "RAM", CustomFieldType.SELECT, True, False, ["8GB", "16GB", "32GB"]),
     ("Laptop", "Processor", CustomFieldType.TEXT, True, False, []),
@@ -352,30 +371,38 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--dry-run", action="store_true", help="Preview changes without writing data.")
         parser.add_argument(
+            "--profile",
+            choices=tuple(SEED_PROFILES.keys()),
+            default="full",
+            help="Seed profile to use. 'compact' creates a smaller, deployment-friendly dataset.",
+        )
+        parser.add_argument(
             "--target-items",
             type=int,
-            default=DEFAULT_ITEM_TARGET,
-            help=f"Total inventory items to maintain. Default: {DEFAULT_ITEM_TARGET}.",
+            default=None,
+            help="Total inventory items to maintain. Defaults depend on the selected profile.",
         )
         parser.add_argument(
             "--target-assignments",
             type=int,
-            default=DEFAULT_ASSIGNMENT_TARGET,
-            help=f"Target assignment rows to maintain. Default: {DEFAULT_ASSIGNMENT_TARGET}.",
+            default=None,
+            help="Target assignment rows to maintain. Defaults depend on the selected profile.",
         )
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
-        target_items = max(options["target_items"], len(CORE_ITEMS))
-        target_assignments = max(options["target_assignments"], 2)
+        profile_name = options["profile"]
+        profile = SEED_PROFILES[profile_name]
+        target_items = max(options["target_items"] or profile["default_items"], len(CORE_ITEMS))
+        target_assignments = max(options["target_assignments"] or profile["default_assignments"], 2)
 
         self.stdout.write(
-            f"Seeding PRD dummy data with {target_items} items and {target_assignments} assignments..."
+            f"Seeding PRD dummy data with profile={profile_name}, {target_items} items and {target_assignments} assignments..."
         )
 
         with transaction.atomic():
             call_command("seed_initial_categories", dry_run=dry_run, stdout=self.stdout)
-            offices = self._seed_offices(dry_run=dry_run)
+            offices = self._seed_offices(profile=profile, dry_run=dry_run)
             users = self._seed_users(offices=offices, dry_run=dry_run)
             self._seed_custom_fields(dry_run=dry_run)
             items = self._seed_inventory(offices=offices, target_items=target_items, dry_run=dry_run)
@@ -397,7 +424,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("PRD dummy seed completed."))
 
-    def _seed_offices(self, dry_run=False):
+    def _seed_offices(self, profile, dry_run=False):
         targets = [
             {
                 "name": "DoNIDCR Central Office",
@@ -407,12 +434,14 @@ class Command(BaseCommand):
             }
         ]
 
-        total_locals = sum(local_count for _, _, local_count in PROVINCES)
-        wards_base = WARD_TOTAL // total_locals
-        ward_remainder = WARD_TOTAL % total_locals
+        provinces = profile["provinces"]
+        ward_total = profile["ward_total"]
+        total_locals = sum(local_count for _, _, local_count in provinces)
+        wards_base = ward_total // total_locals
+        ward_remainder = ward_total % total_locals
         local_global_index = 0
 
-        for province_index, (province_name, province_code, local_count) in enumerate(PROVINCES, start=1):
+        for province_index, (province_name, province_code, local_count) in enumerate(provinces, start=1):
             targets.append(
                 {
                     "name": province_name,

@@ -1,6 +1,6 @@
 from django.db import models
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 
 # Create your models here.
 
@@ -20,10 +20,21 @@ class UserRoles(models.TextChoices):
 
 
 
+class CustomUserManager(UserManager):
+    def get_by_natural_key(self, username):
+        # Allow fixtures to reference users by username as a natural key.
+        return self.get(username=username)
+
+
 class User(AbstractUser):
     full_name_nepali = models.CharField(max_length=255, null=True, blank=True)
     role = models.CharField(max_length=225, choices = UserRoles.choices,null=True, blank=True)
     office = models.ForeignKey("hierarchy.Office", null=True, blank=True, on_delete=models.SET_NULL, related_name="users")
+
+    objects = CustomUserManager()
+
+    def natural_key(self):
+        return (self.username,)
 
     def __str__(self) -> str:
         return self.get_full_name() or self.username
