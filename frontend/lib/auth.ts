@@ -12,6 +12,14 @@ export function storeAuthSession(access: string, refresh: string, email: string)
   localStorage.setItem(USER_EMAIL_KEY, email);
 }
 
+export function storeAccessToken(access: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  localStorage.setItem(ACCESS_TOKEN_KEY, access);
+}
+
 export function clearAuthSession() {
   if (typeof window === "undefined") {
     return;
