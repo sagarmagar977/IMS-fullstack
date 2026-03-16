@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Bell, ChevronDown, ChevronLeft, Search as SearchIcon } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getDisplayName, getStoredUserEmail } from "@/lib/auth";
 
 export function DashboardHeader({
@@ -19,10 +19,9 @@ export function DashboardHeader({
   enableGlobalSearch?: boolean;
   globalSearchHref?: string;
   globalSearchParam?: string;
-}) {
+  }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState("");
   const userEmail = useSyncExternalStore(
     () => () => {},
@@ -31,14 +30,11 @@ export function DashboardHeader({
   );
 
   useEffect(() => {
-    if (!enableGlobalSearch) {
-      return;
-    }
     if (pathname !== globalSearchHref) {
+      setSearchValue("");
       return;
     }
-    setSearchValue(searchParams.get(globalSearchParam) ?? "");
-  }, [enableGlobalSearch, globalSearchHref, globalSearchParam, pathname, searchParams]);
+  }, [globalSearchHref, pathname]);
 
   const handleBack = () => {
     if (backHref) {
