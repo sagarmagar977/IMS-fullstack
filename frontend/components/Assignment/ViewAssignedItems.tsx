@@ -8,11 +8,9 @@ import { Modal } from "@/components/ui/Modal";
 import {
   useDeleteAssignmentMutation,
   useGetAssignmentsQuery,
-  useGetItemsQuery,
   useUpdateAssignmentMutation,
 } from "@/app/redux/api";
 import { downloadCsv, getApiBaseUrl, uploadCsv } from "@/lib/csv";
-import { paginateItems } from "@/lib/pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 interface ViewAssignedItemsProps {
@@ -30,41 +28,29 @@ export function ViewAssignedItems({
   assigneeOfficeId,
   assigneeName,
 }: ViewAssignedItemsProps) {
-  const { data: assignments = [] } = useGetAssignmentsQuery();
-  const { data: items = [] } = useGetItemsQuery();
-  const [deleteAssignment] = useDeleteAssignmentMutation();
-  const [updateAssignment] = useUpdateAssignmentMutation();
-  const [search, setSearch] = useState("");
-  const [openAddItem, setOpenAddItem] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "ASSIGNED" | "RETURNED">("ALL");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ASSIGNED" | "RETURNED">("ALL");
+  const { data: assignments = { items: [], totalItems: 0, next: null, previous: null } } = useGetAssignmentsQuery({
+    search: search.trim() || undefined,
+    status: statusFilter === "ALL" ? undefined : statusFilter,
+    assigned_to_user: assigneeUserId ?? undefined,
+    assigned_to_office: assigneeOfficeId ?? undefined,
+    page,
+    page_size: pageSize,
+  });
+  const [deleteAssignment] = useDeleteAssignmentMutation();
+  const [updateAssignment] = useUpdateAssignmentMutation();
+  const [openAddItem, setOpenAddItem] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null);
   const [feedback, setFeedback] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredAssignments = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return assignments
-      .filter((row) =>
-        assigneeUserId != null
-          ? row.assigned_to_user === assigneeUserId
-          : assigneeOfficeId != null
-            ? row.assigned_to_office === assigneeOfficeId
-            : true
-      )
-      .filter((row) => statusFilter === "ALL" || row.status === statusFilter)
-      .filter((row) => {
-        const item = items.find((entry) => entry.id === row.item);
-        return !term || `${row.item_name} ${row.item_number ?? ""} ${item?.assigned_to ?? ""}`.toLowerCase().includes(term);
-      });
-  }, [assignments, assigneeOfficeId, assigneeUserId, items, search, statusFilter]);
-
-  const paginated = useMemo(
-    () => paginateItems(filteredAssignments, page, pageSize),
-    [filteredAssignments, page, pageSize]
-  );
-  const selectedAssignment = assignments.find((row) => row.id === selectedAssignmentId) ?? null;
+  const rows = useMemo(() => assignments.items ?? [], [assignments]);
+  const totalItems = assignments.totalItems ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(pageSize, 1)));
+  const selectedAssignment = rows.find((row) => row.id === selectedAssignmentId) ?? null;
 
   if (!open) return null;
 
@@ -165,7 +151,7 @@ export function ViewAssignedItems({
 
       {feedback ? <p className="px-6 pb-2 text-sm text-blue-600">{feedback}</p> : null}
 
-      {paginated.items.length === 0 ? (
+      {rows.length === 0 ? (
         <div className="min-h-0 flex flex-1 overflow-auto">
           <EmptyState title="No Data Found" compact fit />
         </div>
@@ -185,7 +171,7 @@ export function ViewAssignedItems({
               </thead>
 
               <tbody>
-                {paginated.items.map((row) => (
+                {rows.map((row) => (
                   <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-3 text-gray-900">{row.item_name}</td>
                     <td className="px-4 py-3 text-gray-600">{row.item_number ?? "-"}</td>
@@ -252,11 +238,11 @@ export function ViewAssignedItems({
       )}
 
       <div className="border-t border-gray-100 px-4 pb-2 pt-1 sm:px-6 lg:shrink-0">
-        <TablePagination
-          page={paginated.page}
-          pageSize={paginated.pageSize}
-          totalItems={paginated.totalItems}
-          totalPages={paginated.totalPages}
+          <TablePagination
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
           onPageChange={setPage}
           onPageSizeChange={(nextPageSize) => {
             setPageSize(nextPageSize);

@@ -1,35 +1,49 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, SlidersHorizontal, Upload, Paperclip } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TablePagination } from "@/components/ui/TablePagination";
 import { useGetAuditsQuery } from "@/app/redux/api";
 import { downloadCsv } from "@/lib/csv";
-import { paginateItems } from "@/lib/pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export function AuditTable() {
-  const { data = [] } = useGetAuditsQuery();
-  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [actionOnly, setActionOnly] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
+  const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "1") || 1);
+  const [pageSize, setPageSize] = useState(() => Number(searchParams.get("page_size") ?? "10") || 10);
+  const [actionOnly, setActionOnly] = useState(() => searchParams.get("action_only") === "1");
+  const { data = { items: [], totalItems: 0, next: null, previous: null } } = useGetAuditsQuery({
+    search: search.trim() || undefined,
+    page,
+    page_size: pageSize,
+  });
+  const rows = useMemo(() => data.items ?? [], [data]);
+  const totalItems = data.totalItems ?? 0;
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (search.trim()) params.set("search", search.trim());
+    else params.delete("search");
+    if (page > 1) params.set("page", String(page));
+    else params.delete("page");
+    if (pageSize !== 10) params.set("page_size", String(pageSize));
+    else params.delete("page_size");
+    if (actionOnly) params.set("action_only", "1");
+    else params.delete("action_only");
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [actionOnly, page, pageSize, pathname, router, search, searchParams]);
 
   const filteredHistory = useMemo(() => {
-    const term = search.trim().toLowerCase();
     return rows.filter((row) => {
-      const matchesSearch =
-        !term ||
-        `${row.item_name} ${row.item_number ?? ""} ${row.action_type} ${row.performed_by_name ?? ""} ${row.remarks}`
-          .toLowerCase()
-          .includes(term);
       const matchesAction = !actionOnly || row.action_type === "ASSIGN" || row.action_type === "RETURN";
-      return matchesSearch && matchesAction;
+      return matchesAction;
     });
-  }, [actionOnly, rows, search]);
-
-  const paginated = useMemo(() => paginateItems(filteredHistory, page, pageSize), [filteredHistory, page, pageSize]);
+  }, [actionOnly, rows]);
+  const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(pageSize, 1)));
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white">
@@ -105,7 +119,7 @@ export function AuditTable() {
               </thead>
 
               <tbody>
-                {paginated.items.map((row) => (
+                {filteredHistory.map((row) => (
                   <tr key={row.id} className="border-b border-[#eef2f3] text-[#555d66]">
                     <td className="px-4 py-3">
                       {new Date(row.created_at).toLocaleDateString("en-GB", {
@@ -143,10 +157,10 @@ export function AuditTable() {
 
       <div className="border-t border-[#eef2f3] px-4 pb-2 pt-1 sm:px-6 lg:shrink-0">
         <TablePagination
-          page={paginated.page}
-          pageSize={paginated.pageSize}
-          totalItems={paginated.totalItems}
-          totalPages={paginated.totalPages}
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
           onPageChange={setPage}
           onPageSizeChange={(nextPageSize) => {
             setPageSize(nextPageSize);

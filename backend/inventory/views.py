@@ -1,7 +1,7 @@
 import csv
 import io
 
-from django.db.models import Prefetch
+from django.db.models import Case, Exists, F, IntegerField, OuterRef, Prefetch, Value, When
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -56,7 +56,19 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return scope_queryset_by_user(queryset, self.request.user, "office_id")
+        queryset = scope_queryset_by_user(queryset, self.request.user, "office_id")
+        assignment_status = self.request.query_params.get("assignment_status")
+        if assignment_status in {AssignmentStatus.ASSIGNED, AssignmentStatus.RETURNED, "UNASSIGNED"}:
+            active_assignment_exists = ItemAssignment.objects.filter(
+                item_id=OuterRef("pk"),
+                status=AssignmentStatus.ASSIGNED,
+            )
+            queryset = queryset.annotate(has_active_assignment=Exists(active_assignment_exists))
+            if assignment_status == AssignmentStatus.ASSIGNED:
+                queryset = queryset.filter(has_active_assignment=True)
+            elif assignment_status == "UNASSIGNED":
+                queryset = queryset.filter(has_active_assignment=False)
+        return queryset
 
     def perform_create(self, serializer):
         item = serializer.save()
@@ -161,7 +173,25 @@ class ConsumableStockViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return scope_queryset_by_user(queryset, self.request.user, "item__office_id")
+        queryset = scope_queryset_by_user(queryset, self.request.user, "item__office_id")
+        stock_status = self.request.query_params.get("stock_status")
+        if not stock_status:
+            return queryset
+
+        status_rank = Case(
+            When(quantity__lte=0, then=Value(0)),
+            When(quantity__lte=F("min_threshold"), then=Value(1)),
+            default=Value(2),
+            output_field=IntegerField(),
+        )
+        queryset = queryset.annotate(stock_status_rank=status_rank)
+        if stock_status == "OUT_OF_STOCK":
+            return queryset.filter(stock_status_rank=0)
+        if stock_status == "LOW_STOCK":
+            return queryset.filter(stock_status_rank=1)
+        if stock_status == "ON_BOARDED":
+            return queryset.filter(stock_status_rank=2)
+        return queryset
 
 
 class ConsumableStockTransactionViewSet(viewsets.ModelViewSet):

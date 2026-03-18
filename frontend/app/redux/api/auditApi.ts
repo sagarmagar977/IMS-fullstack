@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import { unwrapListResponse } from "./utils";
+import { normalizeListResponse, type ListResult } from "./utils";
 
 export type AuditLogApi = {
   id: number;
@@ -12,15 +12,31 @@ export type AuditLogApi = {
   created_at: string;
 };
 
+type GetAuditsParams = {
+  search?: string;
+  action_type?: string;
+  item?: number;
+  performed_by?: number;
+  page?: number;
+  page_size?: number;
+};
+
 export const auditApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getAudits: builder.query<AuditLogApi[], { search?: string } | void>({
-      query: (arg) => {
-        const params = arg && "search" in arg && arg.search ? { search: arg.search } : undefined;
-        return { url: "audit-logs/", params };
-      },
+    getAudits: builder.query<ListResult<AuditLogApi>, GetAuditsParams | void>({
+      query: (arg) => ({
+        url: "audit-logs/",
+        params: {
+          search: arg?.search || undefined,
+          action_type: arg?.action_type || undefined,
+          item: arg?.item || undefined,
+          performed_by: arg?.performed_by || undefined,
+          page: arg?.page || undefined,
+          page_size: arg?.page_size || undefined,
+        },
+      }),
       transformResponse: (response: AuditLogApi[] | { results: AuditLogApi[] }) =>
-        unwrapListResponse(response),
+        normalizeListResponse(response),
       providesTags: ["Audits"],
     }),
   }),

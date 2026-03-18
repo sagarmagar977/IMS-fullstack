@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, Pencil, Plus, Search, SlidersHorizontal, Trash2, Upload } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TablePagination } from "@/components/ui/TablePagination";
 import { AddItemModal } from "./AddItemModal";
 import { AssignItemModal } from "./AssignItemModal";
@@ -9,44 +10,65 @@ import { useDeleteItemMutation, useGetItemsQuery } from "@/app/redux/api";
 import type { InventoryItemApi } from "@/app/redux/api";
 import { Modal } from "@/components/ui/Modal";
 import { downloadCsv, getApiBaseUrl, uploadCsv } from "@/lib/csv";
-import { paginateItems } from "@/lib/pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export function ItemsTable() {
-  const { data = [] } = useGetItemsQuery();
-  const [deleteItem] = useDeleteItemMutation();
-  const items = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-  const [open, setOpen] = React.useState(false);
-  const [assignOpen, setAssignOpen] = React.useState(false);
-  const [search, setSearch] = useState("");
-  const [assignmentFilter, setAssignmentFilter] = useState<"ALL" | "ASSIGNED" | "UNASSIGNED">("ALL");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get("status") ?? "");
+  const [itemTypeFilter, setItemTypeFilter] = useState<"" | "FIXED_ASSET" | "CONSUMABLE">(() => {
+    const itemType = searchParams.get("item_type");
+    return itemType === "FIXED_ASSET" || itemType === "CONSUMABLE" ? itemType : "";
+  });
+  const [assignmentFilter, setAssignmentFilter] = useState<"ALL" | "ASSIGNED" | "UNASSIGNED">(() => {
+    const assignmentStatus = searchParams.get("assignment_status");
+    return assignmentStatus === "ASSIGNED" || assignmentStatus === "UNASSIGNED" ? assignmentStatus : "ALL";
+  });
+  const { data = { items: [], totalItems: 0, next: null, previous: null } } = useGetItemsQuery({
+    search: search.trim() || undefined,
+    status: statusFilter || undefined,
+    item_type: itemTypeFilter || undefined,
+    assignment_status: assignmentFilter === "ALL" ? undefined : assignmentFilter,
+    page,
+    page_size: pageSize,
+  });
+  const [deleteItem] = useDeleteItemMutation();
+  const items = useMemo(() => data.items ?? [], [data]);
+  const [open, setOpen] = React.useState(false);
+  const [assignOpen, setAssignOpen] = React.useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItemApi | null>(null);
   const [editingItem, setEditingItem] = useState<InventoryItemApi | null>(null);
   const [feedback, setFeedback] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredItems = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return items.filter((row) => {
-      const matchesSearch =
-        !term ||
-        `${row.title} ${row.serial_number ?? ""} ${row.item_number ?? ""} ${row.item_type} ${row.assigned_to ?? ""}`
-          .toLowerCase()
-          .includes(term);
+  useEffect(() => {
+    const params = new URLSearchParams();
 
-      const matchesAssignment =
-        assignmentFilter === "ALL" || row.assignment_status === assignmentFilter;
+    if (search.trim()) {
+      params.set("search", search.trim());
+    }
+    if (statusFilter) {
+      params.set("status", statusFilter);
+    }
+    if (itemTypeFilter) {
+      params.set("item_type", itemTypeFilter);
+    }
+    if (assignmentFilter !== "ALL") {
+      params.set("assignment_status", assignmentFilter);
+    }
 
-      return matchesSearch && matchesAssignment;
-    });
-  }, [assignmentFilter, items, search]);
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [assignmentFilter, itemTypeFilter, pathname, router, search, statusFilter]);
 
-  const paginated = useMemo(
-    () => paginateItems(filteredItems, page, pageSize),
-    [filteredItems, page, pageSize]
-  );
+  const filteredItems = useMemo(() => items, [items]);
+
+  const totalItems = data.totalItems ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(pageSize, 1)));
 
   const handleDelete = async (item: InventoryItemApi) => {
     const confirmed = window.confirm(`Delete "${item.title}"?`);
@@ -116,6 +138,44 @@ export function ItemsTable() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 rounded-lg border border-[#d9e1e6] bg-white px-3 py-2 text-sm text-[#5a626a]">
+              <span>Status</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="bg-transparent outline-none"
+                aria-label="Item status filter"
+              >
+                <option value="">All status</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="DISPOSED">Disposed</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="UNASSIGNED">Unassigned</option>
+              </select>
+            </label>
+
+            <label className="flex items-center gap-2 rounded-lg border border-[#d9e1e6] bg-white px-3 py-2 text-sm text-[#5a626a]">
+              <span>Type</span>
+              <select
+                value={itemTypeFilter}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setItemTypeFilter(value === "FIXED_ASSET" || value === "CONSUMABLE" ? value : "");
+                  setPage(1);
+                }}
+                className="bg-transparent outline-none"
+                aria-label="Item type filter"
+              >
+                <option value="">All types</option>
+                <option value="FIXED_ASSET">Fixed Asset</option>
+                <option value="CONSUMABLE">Consumable</option>
+              </select>
+            </label>
+
             <button
               onClick={() =>
                 setAssignmentFilter((current) => {
@@ -189,7 +249,7 @@ export function ItemsTable() {
               </thead>
 
               <tbody>
-                {paginated.items.map((row) => (
+                {filteredItems.map((row) => (
                   <tr key={row.id} className="border-b border-[#eef2f3]">
                     <td className="px-4 py-2.5 text-[#31363c]">{row.title}</td>
                     <td className="px-4 py-2.5 text-[#5c646d]">{row.item_type === "FIXED_ASSET" ? "Fixed Asset" : "Consumable"}</td>
@@ -250,10 +310,10 @@ export function ItemsTable() {
 
         <div className="border-t border-[#eef2f3] px-4 pb-2 pt-1 sm:px-6 lg:shrink-0">
           <TablePagination
-            page={paginated.page}
-            pageSize={paginated.pageSize}
-            totalItems={paginated.totalItems}
-            totalPages={paginated.totalPages}
+            page={page}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            totalPages={totalPages}
             onPageChange={setPage}
             onPageSizeChange={(nextPageSize) => {
               setPageSize(nextPageSize);

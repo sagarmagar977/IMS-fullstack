@@ -1,8 +1,10 @@
 "use client";
 
+import type { CategoryApi } from "@/app/redux/api";
 import type { ActivitiesFilterState } from "@/types";
 
 type RecentActivitiesFilterProps = {
+  categories: CategoryApi[];
   open: boolean;
   draft: ActivitiesFilterState;
   onChangeDraft: (next: ActivitiesFilterState) => void;
@@ -12,6 +14,7 @@ type RecentActivitiesFilterProps = {
 };
 
 export function RecentActivitiesFilter({
+  categories,
   open,
   draft,
   onChangeDraft,
@@ -80,9 +83,11 @@ export function RecentActivitiesFilter({
               aria-label="Category"
             >
               <option value="">All</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Furniture">Furniture</option>
-              <option value="Office">Office</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.name}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -160,4 +165,3 @@ export function RecentActivitiesFilter({
     </div>
   );
 }
-

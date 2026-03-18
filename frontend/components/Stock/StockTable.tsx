@@ -1,26 +1,40 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Eye, Pencil, Plus, Search, SlidersHorizontal, Trash2, Upload } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TablePagination } from "@/components/ui/TablePagination";
 import { CreateTransaction } from "./CreateTransaction";
 import { Modal } from "@/components/ui/Modal";
 import { useDeleteStockMutation, useGetItemsQuery, useGetStocksQuery } from "@/app/redux/api";
 import { downloadCsv } from "@/lib/csv";
-import { paginateItems } from "@/lib/pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export function StockTable() {
-  const { data: stocks = [] } = useGetStocksQuery();
-  const { data: items = [] } = useGetItemsQuery();
-  const [deleteStock] = useDeleteStockMutation();
-  const stockRows = useMemo(() => (Array.isArray(stocks) ? stocks : []), [stocks]);
-  const itemRows = useMemo(() => (Array.isArray(items) ? items : []), [items]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [openDrawer, setOpenDrawer] = useState(false);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "LOW_STOCK" | "OUT_OF_STOCK" | "ON_BOARDED">("ALL");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState(() => searchParams.get("stock_search") ?? "");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "LOW_STOCK" | "OUT_OF_STOCK" | "ON_BOARDED">(() => {
+    const value = searchParams.get("stock_status");
+    return value === "LOW_STOCK" || value === "OUT_OF_STOCK" || value === "ON_BOARDED" ? value : "ALL";
+  });
+  const [page, setPage] = useState(() => Number(searchParams.get("stock_page") ?? "1") || 1);
+  const [pageSize, setPageSize] = useState(() => Number(searchParams.get("stock_page_size") ?? "10") || 10);
+  const { data: stocks = { items: [], totalItems: 0, next: null, previous: null } } = useGetStocksQuery({
+    search: search.trim() || undefined,
+    stock_status: statusFilter === "ALL" ? undefined : statusFilter,
+    page,
+    page_size: pageSize,
+  });
+  const { data: items = { items: [], totalItems: 0, next: null, previous: null } } = useGetItemsQuery({
+    item_type: "CONSUMABLE",
+    page_size: 1000,
+  });
+  const [deleteStock] = useDeleteStockMutation();
+  const stockRows = useMemo(() => stocks.items ?? [], [stocks]);
+  const itemRows = useMemo(() => items.items ?? [], [items]);
   const [selectedStockId, setSelectedStockId] = useState<number | null>(null);
   const [selectedTransactionType, setSelectedTransactionType] = useState<"STOCK_IN" | "STOCK_OUT" | "DAMAGE" | "ADJUSTMENT">("STOCK_IN");
   const [detailsId, setDetailsId] = useState<number | null>(null);
@@ -41,17 +55,23 @@ export function StockTable() {
     });
   }, [itemRows, stockRows]);
 
-  const filteredStock = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return mapped.filter((row) => {
-      const matchesSearch = !term || `${row.name} ${row.category} ${row.unit} ${row.status}`.toLowerCase().includes(term);
-      const matchesStatus = statusFilter === "ALL" || row.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [mapped, search, statusFilter]);
-
-  const paginated = useMemo(() => paginateItems(filteredStock, page, pageSize), [filteredStock, page, pageSize]);
+  const filteredStock = useMemo(() => mapped, [mapped]);
+  const totalItems = stocks.totalItems ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(pageSize, 1)));
   const selectedRow = mapped.find((row) => row.id === detailsId);
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (search.trim()) params.set("stock_search", search.trim());
+    else params.delete("stock_search");
+    if (statusFilter !== "ALL") params.set("stock_status", statusFilter);
+    else params.delete("stock_status");
+    if (page > 1) params.set("stock_page", String(page));
+    else params.delete("stock_page");
+    if (pageSize !== 10) params.set("stock_page_size", String(pageSize));
+    else params.delete("stock_page_size");
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [page, pageSize, pathname, router, search, searchParams, statusFilter]);
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white">
@@ -140,7 +160,7 @@ export function StockTable() {
               </thead>
 
               <tbody>
-                {paginated.items.map((row) => (
+                {filteredStock.map((row) => (
                   <tr key={row.id} className="border-b border-[#eef2f3]">
                     <td className="px-4 py-3 text-[#31363c]">{row.name}</td>
                     <td className="px-4 py-3 text-[#5c646d]">{row.category}</td>
@@ -207,10 +227,10 @@ export function StockTable() {
 
       <div className="border-t border-[#eef2f3] px-4 pb-2 pt-1 sm:px-6 lg:shrink-0">
         <TablePagination
-          page={paginated.page}
-          pageSize={paginated.pageSize}
-          totalItems={paginated.totalItems}
-          totalPages={paginated.totalPages}
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
           onPageChange={setPage}
           onPageSizeChange={(nextPageSize) => {
             setPageSize(nextPageSize);

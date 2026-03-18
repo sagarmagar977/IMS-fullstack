@@ -4,6 +4,7 @@ from openpyxl import Workbook
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from rest_framework import permissions
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -11,6 +12,7 @@ from actions.models import AssignmentStatus, ItemAssignment
 from audit.models import InventoryAuditLog
 from catalog.models import Category
 from common.access import scope_queryset_by_user
+from common.pagination import IMSPageNumberPagination
 from inventory.models import ConsumableStock, ConsumableStockTransaction, FixedAsset, InventoryItem, InventoryStatus
 
 
@@ -259,14 +261,39 @@ class AssignmentSummaryByOfficeView(APIView):
 
 class RecentInventoryActivitiesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = IMSPageNumberPagination
 
     def get(self, request):
         logs_qs = scope_queryset_by_user(InventoryAuditLog.objects.all(), request.user, "item__office_id")
-        logs = (
-            logs_qs.select_related("item", "performed_by")
-            .all()
-            .order_by("-created_at")[:50]
-        )
+        search = (request.query_params.get("search") or "").strip()
+        from_date = request.query_params.get("from")
+        to_date = request.query_params.get("to")
+        action_type = request.query_params.get("action_type")
+        item_type = request.query_params.get("item_type")
+        category = request.query_params.get("category")
+        logs = logs_qs.select_related("item", "performed_by").all()
+        if search:
+            logs = logs.filter(
+                Q(item__title__icontains=search)
+                | Q(item__item_number__icontains=search)
+                | Q(remarks__icontains=search)
+                | Q(performed_by__username__icontains=search)
+                | Q(performed_by__first_name__icontains=search)
+                | Q(performed_by__last_name__icontains=search)
+            )
+        if from_date:
+            logs = logs.filter(created_at__date__gte=from_date)
+        if to_date:
+            logs = logs.filter(created_at__date__lte=to_date)
+        if action_type:
+            logs = logs.filter(action_type=action_type)
+        if item_type:
+            logs = logs.filter(item__item_type=item_type)
+        if category:
+            logs = logs.filter(item__category_id=category)
+        logs = logs.order_by("-created_at")
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(logs, request, view=self)
         data = [
             {
                 "id": log.id,
@@ -278,8 +305,10 @@ class RecentInventoryActivitiesView(APIView):
                 "status": log.action_type,
                 "action": log.remarks,
             }
-            for log in logs
+            for log in (page if page is not None else logs[:50])
         ]
+        if page is not None:
+            return paginator.get_paginated_response(data)
         return Response(data)
 
 

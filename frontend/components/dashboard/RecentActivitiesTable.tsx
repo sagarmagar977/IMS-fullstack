@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Eye, Pencil, Search as SearchIcon, SlidersHorizontal, Trash2 } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TablePagination } from "@/components/ui/TablePagination";
-import { useGetRecentInventoryActivitiesQuery } from "@/app/redux/api";
+import { useGetCategoriesQuery, useGetRecentInventoryActivitiesQuery } from "@/app/redux/api";
 import { RecentActivitiesFilter } from "./RecentActivitiesFilter";
 import type { ActivitiesFilterState } from "@/types";
 import { Modal } from "@/components/ui/Modal";
-import { paginateItems } from "@/lib/pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 const emptyFilter: ActivitiesFilterState = {
@@ -19,37 +19,95 @@ const emptyFilter: ActivitiesFilterState = {
 };
 
 export function RecentActivitiesTable() {
-  const { data = [] } = useGetRecentInventoryActivitiesQuery();
-  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-  const [search, setSearch] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("activity_search") ?? "");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [draft, setDraft] = useState<ActivitiesFilterState>(emptyFilter);
-  const [applied, setApplied] = useState<ActivitiesFilterState>(emptyFilter);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [draft, setDraft] = useState<ActivitiesFilterState>(() => ({
+    from: searchParams.get("activity_from") ?? "",
+    to: searchParams.get("activity_to") ?? "",
+    category: searchParams.get("activity_category") ?? "",
+    itemType:
+      searchParams.get("activity_item_type") === "Fixed Asset" || searchParams.get("activity_item_type") === "Consumable"
+        ? (searchParams.get("activity_item_type") as ActivitiesFilterState["itemType"])
+        : "",
+    status:
+      searchParams.get("activity_status") === "Assigned" ||
+      searchParams.get("activity_status") === "Unassigned" ||
+      searchParams.get("activity_status") === "Damaged"
+        ? (searchParams.get("activity_status") as ActivitiesFilterState["status"])
+        : "",
+  }));
+  const [applied, setApplied] = useState<ActivitiesFilterState>(() => ({
+    from: searchParams.get("activity_from") ?? "",
+    to: searchParams.get("activity_to") ?? "",
+    category: searchParams.get("activity_category") ?? "",
+    itemType:
+      searchParams.get("activity_item_type") === "Fixed Asset" || searchParams.get("activity_item_type") === "Consumable"
+        ? (searchParams.get("activity_item_type") as ActivitiesFilterState["itemType"])
+        : "",
+    status:
+      searchParams.get("activity_status") === "Assigned" ||
+      searchParams.get("activity_status") === "Unassigned" ||
+      searchParams.get("activity_status") === "Damaged"
+        ? (searchParams.get("activity_status") as ActivitiesFilterState["status"])
+        : "",
+  }));
+  const [page, setPage] = useState(() => Number(searchParams.get("activity_page") ?? "1") || 1);
+  const [pageSize, setPageSize] = useState(() => Number(searchParams.get("activity_page_size") ?? "10") || 10);
+  const { data: categories = { items: [], totalItems: 0, next: null, previous: null } } = useGetCategoriesQuery({ page_size: 1000 });
+  const selectedCategory = (categories.items ?? []).find((category) => category.name === applied.category);
+  const { data = { items: [], totalItems: 0, next: null, previous: null } } = useGetRecentInventoryActivitiesQuery({
+    search: search.trim() || undefined,
+    from: applied.from || undefined,
+    to: applied.to || undefined,
+    action_type:
+      applied.status === "Assigned"
+        ? "ASSIGN"
+        : applied.status === "Unassigned"
+          ? "RETURN"
+          : applied.status === "Damaged"
+            ? "REPAIR"
+            : undefined,
+    item_type:
+      applied.itemType === "Fixed Asset"
+        ? "FIXED_ASSET"
+        : applied.itemType === "Consumable"
+          ? "CONSUMABLE"
+          : undefined,
+    category: selectedCategory?.id,
+    page,
+    page_size: pageSize,
+  });
   const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
+  const rows = useMemo(() => data.items ?? [], [data]);
+  const totalItems = data.totalItems ?? 0;
 
-  const filtered = useMemo(() => {
-    return rows.filter((row) => {
-      const haystack = `${row.item_name} ${row.unique_number ?? ""} ${row.performed_by ?? ""} ${row.amount} ${row.status} ${row.action} ${row.date}`.toLowerCase();
-      if (search.trim() && !haystack.includes(search.trim().toLowerCase())) {
-        return false;
-      }
-      if (applied.from && row.date < applied.from) {
-        return false;
-      }
-      if (applied.to && row.date > applied.to) {
-        return false;
-      }
-      if (applied.status && !row.status.toLowerCase().includes(applied.status.toLowerCase())) {
-        return false;
-      }
-      return true;
-    });
-  }, [applied.from, applied.status, applied.to, rows, search]);
-
-  const paginated = useMemo(() => paginateItems(filtered, page, pageSize), [filtered, page, pageSize]);
+  const filtered = useMemo(() => rows, [rows]);
+  const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(pageSize, 1)));
   const selectedRow = rows.find((row) => row.id === selectedRowId);
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (search.trim()) params.set("activity_search", search.trim());
+    else params.delete("activity_search");
+    if (applied.from) params.set("activity_from", applied.from);
+    else params.delete("activity_from");
+    if (applied.to) params.set("activity_to", applied.to);
+    else params.delete("activity_to");
+    if (applied.category) params.set("activity_category", applied.category);
+    else params.delete("activity_category");
+    if (applied.itemType) params.set("activity_item_type", applied.itemType);
+    else params.delete("activity_item_type");
+    if (applied.status) params.set("activity_status", applied.status);
+    else params.delete("activity_status");
+    if (page > 1) params.set("activity_page", String(page));
+    else params.delete("activity_page");
+    if (pageSize !== 10) params.set("activity_page_size", String(pageSize));
+    else params.delete("activity_page_size");
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [applied, page, pageSize, pathname, router, search, searchParams]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.2rem] border border-[#e5ecec] bg-white">
@@ -85,7 +143,7 @@ export function RecentActivitiesTable() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-x-auto px-4 pb-1 sm:px-5 lg:px-6">
-        {paginated.items.length === 0 ? (
+        {filtered.length === 0 ? (
           <EmptyState
             compact
             fit
@@ -106,7 +164,7 @@ export function RecentActivitiesTable() {
             </tr>
           </thead>
           <tbody>
-            {paginated.items.map((row) => (
+            {filtered.map((row) => (
               <tr key={row.id} className="border-b border-[#f0f3f4] text-[13px] text-[#4f555c]">
                 <td className="px-3 py-2.5 font-medium text-[#2f353b] lg:w-[24%]">{row.item_name}</td>
                 <td className="px-3 py-2.5">{row.unique_number ?? "-"}</td>
@@ -158,10 +216,10 @@ export function RecentActivitiesTable() {
 
       <div className="border-t border-[#eef2f3] px-4 pb-2 pt-1.5 sm:px-5 lg:px-6 lg:shrink-0">
         <TablePagination
-          page={paginated.page}
-          pageSize={paginated.pageSize}
-          totalItems={paginated.totalItems}
-          totalPages={paginated.totalPages}
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
           onPageChange={setPage}
           onPageSizeChange={(nextPageSize) => {
             setPageSize(nextPageSize);
@@ -171,6 +229,7 @@ export function RecentActivitiesTable() {
       </div>
 
       <RecentActivitiesFilter
+        categories={categories.items ?? []}
         open={isFilterOpen}
         draft={draft}
         onChangeDraft={setDraft}

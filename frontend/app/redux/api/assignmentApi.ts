@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import { unwrapListResponse } from "./utils";
+import { normalizeListResponse, type ListResult, unwrapListResponse } from "./utils";
 
 export type AssignmentApi = {
   id: number;
@@ -37,15 +37,33 @@ export type CreateAssignmentPayload = {
   remarks?: string;
 };
 
+type GetAssignmentsParams = {
+  search?: string;
+  status?: "ASSIGNED" | "RETURNED";
+  item?: number;
+  assigned_to_user?: number;
+  assigned_to_office?: number;
+  page?: number;
+  page_size?: number;
+};
+
 export const assignmentApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getAssignments: builder.query<AssignmentApi[], { search?: string } | void>({
-      query: (arg) => {
-        const params = arg && "search" in arg && arg.search ? { search: arg.search } : undefined;
-        return { url: "item-assignments/", params };
-      },
+    getAssignments: builder.query<ListResult<AssignmentApi>, GetAssignmentsParams | void>({
+      query: (arg) => ({
+        url: "item-assignments/",
+        params: {
+          search: arg?.search || undefined,
+          status: arg?.status || undefined,
+          item: arg?.item || undefined,
+          assigned_to_user: arg?.assigned_to_user || undefined,
+          assigned_to_office: arg?.assigned_to_office || undefined,
+          page: arg?.page || undefined,
+          page_size: arg?.page_size || undefined,
+        },
+      }),
       transformResponse: (response: AssignmentApi[] | { results: AssignmentApi[] }) =>
-        unwrapListResponse(response),
+        normalizeListResponse(response),
       providesTags: ["Assignments"],
     }),
     getAssignmentSummaryByAssignee: builder.query<AssignmentSummaryApi[], void>({

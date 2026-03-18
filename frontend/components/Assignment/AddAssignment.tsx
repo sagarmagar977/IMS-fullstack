@@ -14,7 +14,7 @@ interface AddAssignmentProps {
 }
 
 export function AddAssignment({ open, onClose }: AddAssignmentProps) {
-  const { data: items = [] } = useGetItemsQuery();
+  const { data: items = { items: [], totalItems: 0, next: null, previous: null } } = useGetItemsQuery({ page_size: 1000 });
   const { data: offices = [] } = useGetOfficesQuery();
   const [createAssignment, { isLoading }] = useCreateAssignmentMutation();
 
@@ -27,8 +27,8 @@ export function AddAssignment({ open, onClose }: AddAssignmentProps) {
   const [submitError, setSubmitError] = useState("");
 
   const assignableItems = useMemo(
-    () => items.filter((item) => item.assignment_status !== "ASSIGNED"),
-    [items]
+    () => items.items.filter((item) => item.assignment_status !== "ASSIGNED"),
+    [items.items]
   );
 
   if (!open) return null;

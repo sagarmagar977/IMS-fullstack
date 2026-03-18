@@ -12,7 +12,7 @@ export type ItemStatus =
   | "Updated"
   | "Low stock";
 
-export type ActivityCategory = "Electronics" | "Furniture" | "Office";
+export type ActivityCategory = string;
 
 // State used by the Recent Activities filter
 export type ActivitiesFilterState = {

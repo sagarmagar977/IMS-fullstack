@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import { unwrapListResponse } from "./utils";
+import { normalizeListResponse, type ListResult, unwrapListResponse } from "./utils";
 
 export type DashboardSummaryApi = {
   total_inventory_items: number;
@@ -27,17 +27,40 @@ export type GlobalSearchResultApi = {
   details: string;
 };
 
+type GetRecentInventoryActivitiesParams = {
+  search?: string;
+  from?: string;
+  to?: string;
+  action_type?: string;
+  item_type?: "FIXED_ASSET" | "CONSUMABLE";
+  category?: number;
+  page?: number;
+  page_size?: number;
+};
+
 export const reportsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardSummary: builder.query<DashboardSummaryApi, void>({
       query: () => "reports/dashboard-summary/",
       providesTags: ["DashboardSummary"],
     }),
-    getRecentInventoryActivities: builder.query<RecentInventoryActivityApi[], void>({
-      query: () => "reports/recent-inventory-activities/",
+    getRecentInventoryActivities: builder.query<ListResult<RecentInventoryActivityApi>, GetRecentInventoryActivitiesParams | void>({
+      query: (arg) => ({
+        url: "reports/recent-inventory-activities/",
+        params: {
+          search: arg?.search || undefined,
+          from: arg?.from || undefined,
+          to: arg?.to || undefined,
+          action_type: arg?.action_type || undefined,
+          item_type: arg?.item_type || undefined,
+          category: arg?.category || undefined,
+          page: arg?.page || undefined,
+          page_size: arg?.page_size || undefined,
+        },
+      }),
       transformResponse: (
         response: RecentInventoryActivityApi[] | { results: RecentInventoryActivityApi[] }
-      ) => unwrapListResponse(response),
+      ) => normalizeListResponse(response),
       providesTags: ["RecentActivities"],
     }),
     getGlobalSearchResults: builder.query<GlobalSearchResultApi[], { q: string; limit?: number }>({

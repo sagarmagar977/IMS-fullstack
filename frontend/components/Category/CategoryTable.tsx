@@ -1,46 +1,71 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Briefcase, Eye, Package, Pencil, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TablePagination } from "@/components/ui/TablePagination";
 import { CreateNewCategoryDrawer } from "./CreateNewCategory";
 import { Modal } from "@/components/ui/Modal";
 import { useDeleteCategoryMutation, useGetCategoriesQuery, useGetItemsQuery } from "@/app/redux/api";
 import type { CategoryApi } from "@/app/redux/api";
-import { paginateItems } from "@/lib/pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export function CategoryTable() {
-  const { data: categories = [] } = useGetCategoriesQuery();
-  const { data: items = [] } = useGetItemsQuery();
-  const [deleteCategory] = useDeleteCategoryMutation();
-  const [activeTab, setActiveTab] = useState<"fixed" | "consumable">("fixed");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<"fixed" | "consumable">(
+    () => (searchParams.get("tab") === "consumable" ? "consumable" : "fixed")
+  );
   const [openCreateCategory, setOpenCreateCategory] = useState(false);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
+  const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "1") || 1);
+  const [pageSize, setPageSize] = useState(() => Number(searchParams.get("page_size") ?? "10") || 10);
+  const { data: categories = { items: [], totalItems: 0, next: null, previous: null } } = useGetCategoriesQuery({
+    search: search.trim() || undefined,
+    is_consumable: activeTab === "consumable",
+    page,
+    page_size: pageSize,
+  });
+  const { data: items = { items: [], totalItems: 0, next: null, previous: null } } = useGetItemsQuery({
+    item_type: activeTab === "fixed" ? "FIXED_ASSET" : "CONSUMABLE",
+    page_size: 1000,
+  });
+  const [deleteCategory] = useDeleteCategoryMutation();
   const [selectedCategory, setSelectedCategory] = useState<CategoryApi | null>(null);
   const [editingCategory, setEditingCategory] = useState<CategoryApi | null>(null);
-  const [showWithItemsOnly, setShowWithItemsOnly] = useState(false);
+  const [showWithItemsOnly, setShowWithItemsOnly] = useState(() => searchParams.get("with_items_only") === "1");
   const [feedback, setFeedback] = useState("");
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", activeTab);
+    if (search.trim()) params.set("search", search.trim());
+    else params.delete("search");
+    if (page > 1) params.set("page", String(page));
+    else params.delete("page");
+    if (pageSize !== 10) params.set("page_size", String(pageSize));
+    else params.delete("page_size");
+    if (showWithItemsOnly) params.set("with_items_only", "1");
+    else params.delete("with_items_only");
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [activeTab, page, pageSize, pathname, router, search, searchParams, showWithItemsOnly]);
 
   const rows = useMemo(() => {
-    return categories
-      .filter((row) => (activeTab === "fixed" ? !row.is_consumable : row.is_consumable))
+    return (categories.items ?? [])
       .filter((row) => {
-        const matchesSearch = !search.trim() || row.name.toLowerCase().includes(search.trim().toLowerCase());
-        const itemCount = items.filter((item) => item.category === row.id).length;
+        const itemCount = (items.items ?? []).filter((item) => item.category === row.id).length;
         const matchesUsage = !showWithItemsOnly || itemCount > 0;
-      return matchesSearch && matchesUsage;
+      return matchesUsage;
     })
     .map((row) => ({
       ...row,
-      itemCount: items.filter((item) => item.category === row.id).length,
-      assignedCount: items.filter((item) => item.category === row.id && item.assignment_status === "ASSIGNED").length,
+      itemCount: (items.items ?? []).filter((item) => item.category === row.id).length,
+      assignedCount: (items.items ?? []).filter((item) => item.category === row.id && item.assignment_status === "ASSIGNED").length,
     }));
-  }, [activeTab, categories, items, search, showWithItemsOnly]);
-
-  const paginated = useMemo(() => paginateItems(rows, page, pageSize), [page, pageSize, rows]);
+  }, [categories, items, showWithItemsOnly]);
+  const totalItems = categories.totalItems ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(pageSize, 1)));
 
   const handleDelete = async (category: CategoryApi) => {
     if (!window.confirm(`Delete "${category.name}"?`)) {
@@ -151,7 +176,7 @@ export function CategoryTable() {
               </thead>
 
               <tbody>
-                {paginated.items.map((row) => (
+                {rows.map((row) => (
                   <tr key={row.id} className="border-b border-[#eef2f3]">
                     <td className="px-4 py-3 text-[#31363c]">{row.name}</td>
                     <td className="px-4 py-3 text-[#5c646d]">
@@ -197,11 +222,11 @@ export function CategoryTable() {
       )}
 
       <div className="border-t border-[#eef2f3] px-4 pb-2 pt-1 sm:px-6 lg:shrink-0">
-        <TablePagination
-          page={paginated.page}
-          pageSize={paginated.pageSize}
-          totalItems={paginated.totalItems}
-          totalPages={paginated.totalPages}
+          <TablePagination
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
           onPageChange={setPage}
           onPageSizeChange={(nextPageSize) => {
             setPageSize(nextPageSize);
@@ -231,12 +256,12 @@ export function CategoryTable() {
             <Detail label="Type" value={selectedCategory.is_consumable ? "Consumable" : "Fixed Asset"} />
             <Detail
               label="Items"
-              value={String(items.filter((item) => item.category === selectedCategory.id).length)}
+              value={String((items.items ?? []).filter((item) => item.category === selectedCategory.id).length)}
             />
             <Detail
               label="Assigned"
               value={String(
-                items.filter(
+                (items.items ?? []).filter(
                   (item) => item.category === selectedCategory.id && item.assignment_status === "ASSIGNED"
                 ).length
               )}

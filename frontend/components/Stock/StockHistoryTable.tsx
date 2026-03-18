@@ -1,35 +1,50 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, Upload, Search } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TablePagination } from "@/components/ui/TablePagination";
 import { useGetStockTransactionsQuery } from "@/app/redux/api";
 import { downloadCsv } from "@/lib/csv";
-import { paginateItems } from "@/lib/pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export function StockHistoryTable() {
-  const { data = [] } = useGetStockTransactionsQuery();
-  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"ALL" | "STOCK_IN" | "STOCK_OUT" | "DAMAGE" | "ADJUSTMENT">("ALL");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("history_search") ?? "");
+  const [typeFilter, setTypeFilter] = useState<"ALL" | "STOCK_IN" | "STOCK_OUT" | "DAMAGE" | "ADJUSTMENT">(() => {
+    const value = searchParams.get("history_type");
+    return value === "STOCK_IN" || value === "STOCK_OUT" || value === "DAMAGE" || value === "ADJUSTMENT"
+      ? value
+      : "ALL";
+  });
+  const [page, setPage] = useState(() => Number(searchParams.get("history_page") ?? "1") || 1);
+  const [pageSize, setPageSize] = useState(() => Number(searchParams.get("history_page_size") ?? "10") || 10);
+  const { data = { items: [], totalItems: 0, next: null, previous: null } } = useGetStockTransactionsQuery({
+    search: search.trim() || undefined,
+    transaction_type: typeFilter === "ALL" ? undefined : typeFilter,
+    page,
+    page_size: pageSize,
+  });
+  const rows = useMemo(() => data.items ?? [], [data]);
+  const totalItems = data.totalItems ?? 0;
 
-  const filteredHistory = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return rows.filter((row) => {
-      const matchesSearch =
-        !term ||
-        `${row.item_name} ${row.item_number ?? ""} ${row.transaction_type} ${row.performed_by_name ?? ""} ${row.description}`
-          .toLowerCase()
-          .includes(term);
-      const matchesType = typeFilter === "ALL" || row.transaction_type === typeFilter;
-      return matchesSearch && matchesType;
-    });
-  }, [rows, search, typeFilter]);
-
-  const paginated = useMemo(() => paginateItems(filteredHistory, page, pageSize), [filteredHistory, page, pageSize]);
+  const filteredHistory = useMemo(() => rows, [rows]);
+  const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(pageSize, 1)));
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (search.trim()) params.set("history_search", search.trim());
+    else params.delete("history_search");
+    if (typeFilter !== "ALL") params.set("history_type", typeFilter);
+    else params.delete("history_type");
+    if (page > 1) params.set("history_page", String(page));
+    else params.delete("history_page");
+    if (pageSize !== 10) params.set("history_page_size", String(pageSize));
+    else params.delete("history_page_size");
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [page, pageSize, pathname, router, search, searchParams, typeFilter]);
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white">
@@ -117,7 +132,7 @@ export function StockHistoryTable() {
               </thead>
 
               <tbody>
-                {paginated.items.map((row) => (
+                {filteredHistory.map((row) => (
                   <tr key={row.id} className="border-b border-[#eef2f3] text-[#555d66]">
                     <td className="px-4 py-3">
                       {new Date(row.created_at).toLocaleDateString("en-GB", {
@@ -141,10 +156,10 @@ export function StockHistoryTable() {
 
       <div className="border-t border-[#eef2f3] px-4 pb-2 pt-1 sm:px-6 lg:shrink-0">
         <TablePagination
-          page={paginated.page}
-          pageSize={paginated.pageSize}
-          totalItems={paginated.totalItems}
-          totalPages={paginated.totalPages}
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
           onPageChange={setPage}
           onPageSizeChange={(nextPageSize) => {
             setPageSize(nextPageSize);

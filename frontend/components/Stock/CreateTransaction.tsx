@@ -21,8 +21,8 @@ export function CreateTransaction({
   initialStockId,
   initialTransactionType = "STOCK_IN",
 }: CreateTransactionProps) {
-  const { data: stocks = [] } = useGetStocksQuery();
-  const { data: items = [] } = useGetItemsQuery();
+  const { data: stocks = { items: [], totalItems: 0, next: null, previous: null } } = useGetStocksQuery({ page_size: 1000 });
+  const { data: items = { items: [], totalItems: 0, next: null, previous: null } } = useGetItemsQuery({ page_size: 1000 });
   const [createTransaction, { isLoading }] = useCreateStockTransactionMutation();
 
   const [stockId, setStockId] = useState<number | "">(initialStockId ?? "");
@@ -36,12 +36,12 @@ export function CreateTransaction({
   const [submitError, setSubmitError] = useState("");
 
   const stockOptions = useMemo(() => {
-    return stocks.map((s) => {
-      const item = items.find((i) => i.id === s.item);
+    return stocks.items.map((s) => {
+      const item = items.items.find((i) => i.id === s.item);
       const label = item ? `${item.title} (Qty: ${s.quantity})` : `Stock #${s.id}`;
       return { value: String(s.id), label };
     });
-  }, [items, stocks]);
+  }, [items.items, stocks.items]);
 
   if (!open) return null;
 

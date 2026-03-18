@@ -1,0 +1,5261 @@
+openapi: 3.0.3
+info:
+  title: IMS API
+  version: 1.0.0
+  description: Inventory Management System API
+paths:
+  /api/asset-types/:
+    get:
+      operationId: asset_types_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_consumable
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - asset-types
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAssetTypeList'
+          description: ''
+  /api/asset-types/{id}/:
+    get:
+      operationId: asset_types_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset type.
+        required: true
+      tags:
+      - asset-types
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetType'
+          description: ''
+  /api/audit-logs/:
+    get:
+      operationId: audit_logs_list
+      parameters:
+      - in: query
+        name: action_type
+        schema:
+          type: string
+          enum:
+          - ASSIGN
+          - CREATE
+          - DISPOSE
+          - REPAIR
+          - RETURN
+          - UPDATE
+        description: |-
+          * `CREATE` - Create
+          * `UPDATE` - Update
+          * `ASSIGN` - Assign
+          * `RETURN` - Return
+          * `REPAIR` - Repair
+          * `DISPOSE` - Dispose
+      - in: query
+        name: item
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: performed_by
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - audit-logs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInventoryAuditLogList'
+          description: ''
+  /api/audit-logs/{id}/:
+    get:
+      operationId: audit_logs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory audit log.
+        required: true
+      tags:
+      - audit-logs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAuditLog'
+          description: ''
+  /api/auth/token/:
+    post:
+      operationId: auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailOrUsernameTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailOrUsernameTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailOrUsernameTokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailOrUsernameTokenObtainPair'
+          description: ''
+  /api/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/categories/:
+    get:
+      operationId: categories_list
+      parameters:
+      - in: query
+        name: is_consumable
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+    post:
+      operationId: categories_create
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/categories/{id}/:
+    get:
+      operationId: categories_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: categories_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: categories_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: categories_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/consumable-stock-transactions/:
+    get:
+      operationId: consumable_stock_transactions_list
+      parameters:
+      - in: query
+        name: assigned_to
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: performed_by
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: stock
+        schema:
+          type: integer
+      - in: query
+        name: transaction_type
+        schema:
+          type: string
+          enum:
+          - ADJUSTMENT
+          - DAMAGE
+          - STOCK_IN
+          - STOCK_OUT
+        description: |-
+          * `STOCK_IN` - Stock In
+          * `STOCK_OUT` - Stock Out
+          * `DAMAGE` - Damage
+          * `ADJUSTMENT` - Adjustment
+      tags:
+      - consumable-stock-transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsumableStockTransactionList'
+          description: ''
+    post:
+      operationId: consumable_stock_transactions_create
+      tags:
+      - consumable-stock-transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStockTransaction'
+          description: ''
+  /api/consumable-stock-transactions/{id}/:
+    get:
+      operationId: consumable_stock_transactions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock transaction.
+        required: true
+      tags:
+      - consumable-stock-transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStockTransaction'
+          description: ''
+    put:
+      operationId: consumable_stock_transactions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock transaction.
+        required: true
+      tags:
+      - consumable-stock-transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStockTransaction'
+          description: ''
+    patch:
+      operationId: consumable_stock_transactions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock transaction.
+        required: true
+      tags:
+      - consumable-stock-transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStockTransaction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStockTransaction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStockTransaction'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStockTransaction'
+          description: ''
+    delete:
+      operationId: consumable_stock_transactions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock transaction.
+        required: true
+      tags:
+      - consumable-stock-transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/consumable-stocks/:
+    get:
+      operationId: consumable_stocks_list
+      parameters:
+      - in: query
+        name: item
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: reorder_alert_enabled
+        schema:
+          type: boolean
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - consumable-stocks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsumableStockList'
+          description: ''
+    post:
+      operationId: consumable_stocks_create
+      tags:
+      - consumable-stocks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStock'
+          description: ''
+  /api/consumable-stocks/{id}/:
+    get:
+      operationId: consumable_stocks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock.
+        required: true
+      tags:
+      - consumable-stocks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStock'
+          description: ''
+    put:
+      operationId: consumable_stocks_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock.
+        required: true
+      tags:
+      - consumable-stocks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStock'
+          description: ''
+    patch:
+      operationId: consumable_stocks_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock.
+        required: true
+      tags:
+      - consumable-stocks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStock'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStock'
+          description: ''
+    delete:
+      operationId: consumable_stocks_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock.
+        required: true
+      tags:
+      - consumable-stocks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/custom-fields/:
+    get:
+      operationId: custom_fields_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: field_type
+        schema:
+          type: string
+          enum:
+          - BOOLEAN
+          - DATE
+          - FILE
+          - NUMBER
+          - SELECT
+          - TEXT
+        description: |-
+          * `TEXT` - Text
+          * `NUMBER` - Number
+          * `DATE` - Date
+          * `BOOLEAN` - Boolean
+          * `SELECT` - Select
+          * `FILE` - File
+      - in: query
+        name: is_unique
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: required
+        schema:
+          type: boolean
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - custom-fields
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCustomFieldDefinitionList'
+          description: ''
+    post:
+      operationId: custom_fields_create
+      tags:
+      - custom-fields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinition'
+          description: ''
+  /api/custom-fields/{id}/:
+    get:
+      operationId: custom_fields_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this custom field definition.
+        required: true
+      tags:
+      - custom-fields
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinition'
+          description: ''
+    put:
+      operationId: custom_fields_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this custom field definition.
+        required: true
+      tags:
+      - custom-fields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinition'
+          description: ''
+    patch:
+      operationId: custom_fields_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this custom field definition.
+        required: true
+      tags:
+      - custom-fields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomFieldDefinition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomFieldDefinition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomFieldDefinition'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinition'
+          description: ''
+    delete:
+      operationId: custom_fields_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this custom field definition.
+        required: true
+      tags:
+      - custom-fields
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/fixed-assets/:
+    get:
+      operationId: fixed_assets_list
+      parameters:
+      - in: query
+        name: item
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - fixed-assets
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFixedAssetList'
+          description: ''
+    post:
+      operationId: fixed_assets_create
+      tags:
+      - fixed-assets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedAsset'
+          description: ''
+  /api/fixed-assets/{id}/:
+    get:
+      operationId: fixed_assets_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fixed asset.
+        required: true
+      tags:
+      - fixed-assets
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedAsset'
+          description: ''
+    put:
+      operationId: fixed_assets_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fixed asset.
+        required: true
+      tags:
+      - fixed-assets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedAsset'
+          description: ''
+    patch:
+      operationId: fixed_assets_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fixed asset.
+        required: true
+      tags:
+      - fixed-assets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFixedAsset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFixedAsset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFixedAsset'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedAsset'
+          description: ''
+    delete:
+      operationId: fixed_assets_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fixed asset.
+        required: true
+      tags:
+      - fixed-assets
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/integrations/webhooks/sendgrid/events/:
+    post:
+      operationId: integrations_webhooks_sendgrid_events_create
+      tags:
+      - integrations
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/integrations/webhooks/twilio/sms-status/:
+    post:
+      operationId: integrations_webhooks_twilio_sms_status_create
+      tags:
+      - integrations
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/inventory-items/:
+    get:
+      operationId: inventory_items_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: item_type
+        schema:
+          type: string
+          enum:
+          - CONSUMABLE
+          - FIXED_ASSET
+        description: |-
+          * `FIXED_ASSET` - Fixed Asset
+          * `CONSUMABLE` - Consumable
+      - in: query
+        name: office
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - ASSIGNED
+          - DISPOSED
+          - INACTIVE
+          - UNASSIGNED
+        description: |-
+          * `ACTIVE` - Active
+          * `INACTIVE` - Inactive
+          * `DISPOSED` - Disposed
+          * `ASSIGNED` - Assigned
+          * `UNASSIGNED` - Unassigned
+      tags:
+      - inventory-items
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInventoryItemList'
+          description: ''
+    post:
+      operationId: inventory_items_create
+      tags:
+      - inventory-items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+  /api/inventory-items/{id}/:
+    get:
+      operationId: inventory_items_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory item.
+        required: true
+      tags:
+      - inventory-items
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+    put:
+      operationId: inventory_items_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory item.
+        required: true
+      tags:
+      - inventory-items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+    patch:
+      operationId: inventory_items_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory item.
+        required: true
+      tags:
+      - inventory-items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryItem'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+    delete:
+      operationId: inventory_items_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory item.
+        required: true
+      tags:
+      - inventory-items
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/inventory-items/bulk-import/:
+    post:
+      operationId: inventory_items_bulk_import_create
+      tags:
+      - inventory-items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+  /api/inventory-items/item-type-choices/:
+    get:
+      operationId: inventory_items_item_type_choices_retrieve
+      tags:
+      - inventory-items
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+  /api/item-assignments/:
+    get:
+      operationId: item_assignments_list
+      parameters:
+      - in: query
+        name: assign_till
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: assigned_to_office
+        schema:
+          type: integer
+      - in: query
+        name: assigned_to_user
+        schema:
+          type: integer
+      - in: query
+        name: item
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ASSIGNED
+          - RETURNED
+        description: |-
+          * `ASSIGNED` - Assigned
+          * `RETURNED` - Returned
+      tags:
+      - item-assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedItemAssignmentList'
+          description: ''
+    post:
+      operationId: item_assignments_create
+      tags:
+      - item-assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+  /api/item-assignments/{id}/:
+    get:
+      operationId: item_assignments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this item assignment.
+        required: true
+      tags:
+      - item-assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+    put:
+      operationId: item_assignments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this item assignment.
+        required: true
+      tags:
+      - item-assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+    patch:
+      operationId: item_assignments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this item assignment.
+        required: true
+      tags:
+      - item-assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedItemAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedItemAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedItemAssignment'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+    delete:
+      operationId: item_assignments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this item assignment.
+        required: true
+      tags:
+      - item-assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/item-assignments/bulk-import/:
+    post:
+      operationId: item_assignments_bulk_import_create
+      tags:
+      - item-assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+  /api/item-assignments/summary-by-assignee/:
+    get:
+      operationId: item_assignments_summary_by_assignee_retrieve
+      tags:
+      - item-assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+  /api/observability/slo/:
+    get:
+      operationId: observability_slo_retrieve
+      tags:
+      - observability
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/observability/status/:
+    get:
+      operationId: observability_status_retrieve
+      tags:
+      - observability
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/offices/:
+    get:
+      operationId: offices_list
+      parameters:
+      - in: query
+        name: level
+        schema:
+          type: string
+          enum:
+          - CENTRAL
+          - LOCAL
+          - PROVINCIAL
+          - WARD
+        description: |-
+          * `CENTRAL` - central
+          * `PROVINCIAL` - provincial
+          * `LOCAL` - local
+          * `WARD` - ward
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: parent_office
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - offices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOfficeList'
+          description: ''
+    post:
+      operationId: offices_create
+      tags:
+      - offices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Office'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Office'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Office'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office'
+          description: ''
+  /api/offices/{id}/:
+    get:
+      operationId: offices_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this office.
+        required: true
+      tags:
+      - offices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office'
+          description: ''
+    put:
+      operationId: offices_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this office.
+        required: true
+      tags:
+      - offices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Office'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Office'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Office'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office'
+          description: ''
+    patch:
+      operationId: offices_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this office.
+        required: true
+      tags:
+      - offices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOffice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOffice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOffice'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office'
+          description: ''
+    delete:
+      operationId: offices_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this office.
+        required: true
+      tags:
+      - offices
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/reports/assignment-summary-by-office/:
+    get:
+      operationId: reports_assignment_summary_by_office_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/dashboard-summary/:
+    get:
+      operationId: reports_dashboard_summary_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/global-search/:
+    get:
+      operationId: reports_global_search_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/inventory/:
+    get:
+      operationId: reports_inventory_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/inventory/export-csv/:
+    get:
+      operationId: reports_inventory_export_csv_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/inventory/export-excel/:
+    get:
+      operationId: reports_inventory_export_excel_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/inventory/export-pdf/:
+    get:
+      operationId: reports_inventory_export_pdf_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/low-stock/:
+    get:
+      operationId: reports_low_stock_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/recent-inventory-activities/:
+    get:
+      operationId: reports_recent_inventory_activities_retrieve
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/:
+    get:
+      operationId: users_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: office
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: role
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - AUDIT
+          - CENTRAL_ADMIN
+          - CENTRAL_PROCUREMENT_STORE
+          - FINANCE
+          - LOCAL_ADMIN
+          - PROVINCIAL_ADMIN
+          - SUPER_ADMIN
+          - WARD_OFFICER
+        description: |-
+          * `SUPER_ADMIN` - Super Admin
+          * `CENTRAL_ADMIN` - Central Admin
+          * `CENTRAL_PROCUREMENT_STORE` - Central Procurement/Store
+          * `PROVINCIAL_ADMIN` - Provincial Admin
+          * `LOCAL_ADMIN` - Local Admin
+          * `WARD_OFFICER` - Ward Officer
+          * `FINANCE` - Finance
+          * `AUDIT` - Audit
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+    post:
+      operationId: users_create
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/{id}/:
+    get:
+      operationId: users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: users_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: users_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/asset-types/:
+    get:
+      operationId: v1_asset_types_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_consumable
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAssetTypeList'
+          description: ''
+  /api/v1/asset-types/{id}/:
+    get:
+      operationId: v1_asset_types_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this asset type.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetType'
+          description: ''
+  /api/v1/audit-logs/:
+    get:
+      operationId: v1_audit_logs_list
+      parameters:
+      - in: query
+        name: action_type
+        schema:
+          type: string
+          enum:
+          - ASSIGN
+          - CREATE
+          - DISPOSE
+          - REPAIR
+          - RETURN
+          - UPDATE
+        description: |-
+          * `CREATE` - Create
+          * `UPDATE` - Update
+          * `ASSIGN` - Assign
+          * `RETURN` - Return
+          * `REPAIR` - Repair
+          * `DISPOSE` - Dispose
+      - in: query
+        name: item
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: performed_by
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInventoryAuditLogList'
+          description: ''
+  /api/v1/audit-logs/{id}/:
+    get:
+      operationId: v1_audit_logs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory audit log.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAuditLog'
+          description: ''
+  /api/v1/auth/token/:
+    post:
+      operationId: v1_auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailOrUsernameTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailOrUsernameTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailOrUsernameTokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailOrUsernameTokenObtainPair'
+          description: ''
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: v1_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/categories/:
+    get:
+      operationId: v1_categories_list
+      parameters:
+      - in: query
+        name: is_consumable
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+    post:
+      operationId: v1_categories_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/v1/categories/{id}/:
+    get:
+      operationId: v1_categories_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: v1_categories_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: v1_categories_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: v1_categories_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/consumable-stock-transactions/:
+    get:
+      operationId: v1_consumable_stock_transactions_list
+      parameters:
+      - in: query
+        name: assigned_to
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: performed_by
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: stock
+        schema:
+          type: integer
+      - in: query
+        name: transaction_type
+        schema:
+          type: string
+          enum:
+          - ADJUSTMENT
+          - DAMAGE
+          - STOCK_IN
+          - STOCK_OUT
+        description: |-
+          * `STOCK_IN` - Stock In
+          * `STOCK_OUT` - Stock Out
+          * `DAMAGE` - Damage
+          * `ADJUSTMENT` - Adjustment
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsumableStockTransactionList'
+          description: ''
+    post:
+      operationId: v1_consumable_stock_transactions_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStockTransaction'
+          description: ''
+  /api/v1/consumable-stock-transactions/{id}/:
+    get:
+      operationId: v1_consumable_stock_transactions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock transaction.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStockTransaction'
+          description: ''
+    put:
+      operationId: v1_consumable_stock_transactions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock transaction.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsumableStockTransaction'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStockTransaction'
+          description: ''
+    patch:
+      operationId: v1_consumable_stock_transactions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock transaction.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStockTransaction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStockTransaction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStockTransaction'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStockTransaction'
+          description: ''
+    delete:
+      operationId: v1_consumable_stock_transactions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock transaction.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/consumable-stocks/:
+    get:
+      operationId: v1_consumable_stocks_list
+      parameters:
+      - in: query
+        name: item
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: reorder_alert_enabled
+        schema:
+          type: boolean
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsumableStockList'
+          description: ''
+    post:
+      operationId: v1_consumable_stocks_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStock'
+          description: ''
+  /api/v1/consumable-stocks/{id}/:
+    get:
+      operationId: v1_consumable_stocks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStock'
+          description: ''
+    put:
+      operationId: v1_consumable_stocks_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConsumableStock'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStock'
+          description: ''
+    patch:
+      operationId: v1_consumable_stocks_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedConsumableStock'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumableStock'
+          description: ''
+    delete:
+      operationId: v1_consumable_stocks_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this consumable stock.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/custom-fields/:
+    get:
+      operationId: v1_custom_fields_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: field_type
+        schema:
+          type: string
+          enum:
+          - BOOLEAN
+          - DATE
+          - FILE
+          - NUMBER
+          - SELECT
+          - TEXT
+        description: |-
+          * `TEXT` - Text
+          * `NUMBER` - Number
+          * `DATE` - Date
+          * `BOOLEAN` - Boolean
+          * `SELECT` - Select
+          * `FILE` - File
+      - in: query
+        name: is_unique
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: required
+        schema:
+          type: boolean
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCustomFieldDefinitionList'
+          description: ''
+    post:
+      operationId: v1_custom_fields_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinition'
+          description: ''
+  /api/v1/custom-fields/{id}/:
+    get:
+      operationId: v1_custom_fields_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this custom field definition.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinition'
+          description: ''
+    put:
+      operationId: v1_custom_fields_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this custom field definition.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefinition'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinition'
+          description: ''
+    patch:
+      operationId: v1_custom_fields_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this custom field definition.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomFieldDefinition'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomFieldDefinition'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomFieldDefinition'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinition'
+          description: ''
+    delete:
+      operationId: v1_custom_fields_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this custom field definition.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/fixed-assets/:
+    get:
+      operationId: v1_fixed_assets_list
+      parameters:
+      - in: query
+        name: item
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFixedAssetList'
+          description: ''
+    post:
+      operationId: v1_fixed_assets_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedAsset'
+          description: ''
+  /api/v1/fixed-assets/{id}/:
+    get:
+      operationId: v1_fixed_assets_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fixed asset.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedAsset'
+          description: ''
+    put:
+      operationId: v1_fixed_assets_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fixed asset.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FixedAsset'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedAsset'
+          description: ''
+    patch:
+      operationId: v1_fixed_assets_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fixed asset.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFixedAsset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFixedAsset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFixedAsset'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedAsset'
+          description: ''
+    delete:
+      operationId: v1_fixed_assets_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fixed asset.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/integrations/webhooks/sendgrid/events/:
+    post:
+      operationId: v1_integrations_webhooks_sendgrid_events_create
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/integrations/webhooks/twilio/sms-status/:
+    post:
+      operationId: v1_integrations_webhooks_twilio_sms_status_create
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/inventory-items/:
+    get:
+      operationId: v1_inventory_items_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: item_type
+        schema:
+          type: string
+          enum:
+          - CONSUMABLE
+          - FIXED_ASSET
+        description: |-
+          * `FIXED_ASSET` - Fixed Asset
+          * `CONSUMABLE` - Consumable
+      - in: query
+        name: office
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - ASSIGNED
+          - DISPOSED
+          - INACTIVE
+          - UNASSIGNED
+        description: |-
+          * `ACTIVE` - Active
+          * `INACTIVE` - Inactive
+          * `DISPOSED` - Disposed
+          * `ASSIGNED` - Assigned
+          * `UNASSIGNED` - Unassigned
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInventoryItemList'
+          description: ''
+    post:
+      operationId: v1_inventory_items_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+  /api/v1/inventory-items/{id}/:
+    get:
+      operationId: v1_inventory_items_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory item.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+    put:
+      operationId: v1_inventory_items_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory item.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+    patch:
+      operationId: v1_inventory_items_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory item.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInventoryItem'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+    delete:
+      operationId: v1_inventory_items_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this inventory item.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/inventory-items/bulk-import/:
+    post:
+      operationId: v1_inventory_items_bulk_import_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+  /api/v1/inventory-items/item-type-choices/:
+    get:
+      operationId: v1_inventory_items_item_type_choices_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
+  /api/v1/item-assignments/:
+    get:
+      operationId: v1_item_assignments_list
+      parameters:
+      - in: query
+        name: assign_till
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: assigned_to_office
+        schema:
+          type: integer
+      - in: query
+        name: assigned_to_user
+        schema:
+          type: integer
+      - in: query
+        name: item
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ASSIGNED
+          - RETURNED
+        description: |-
+          * `ASSIGNED` - Assigned
+          * `RETURNED` - Returned
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedItemAssignmentList'
+          description: ''
+    post:
+      operationId: v1_item_assignments_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+  /api/v1/item-assignments/{id}/:
+    get:
+      operationId: v1_item_assignments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this item assignment.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+    put:
+      operationId: v1_item_assignments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this item assignment.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+    patch:
+      operationId: v1_item_assignments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this item assignment.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedItemAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedItemAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedItemAssignment'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+    delete:
+      operationId: v1_item_assignments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this item assignment.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/item-assignments/bulk-import/:
+    post:
+      operationId: v1_item_assignments_bulk_import_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemAssignment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+  /api/v1/item-assignments/summary-by-assignee/:
+    get:
+      operationId: v1_item_assignments_summary_by_assignee_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAssignment'
+          description: ''
+  /api/v1/observability/slo/:
+    get:
+      operationId: v1_observability_slo_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/observability/status/:
+    get:
+      operationId: v1_observability_status_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/offices/:
+    get:
+      operationId: v1_offices_list
+      parameters:
+      - in: query
+        name: level
+        schema:
+          type: string
+          enum:
+          - CENTRAL
+          - LOCAL
+          - PROVINCIAL
+          - WARD
+        description: |-
+          * `CENTRAL` - central
+          * `PROVINCIAL` - provincial
+          * `LOCAL` - local
+          * `WARD` - ward
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: parent_office
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOfficeList'
+          description: ''
+    post:
+      operationId: v1_offices_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Office'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Office'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Office'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office'
+          description: ''
+  /api/v1/offices/{id}/:
+    get:
+      operationId: v1_offices_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this office.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office'
+          description: ''
+    put:
+      operationId: v1_offices_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this office.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Office'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Office'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Office'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office'
+          description: ''
+    patch:
+      operationId: v1_offices_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this office.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOffice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOffice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOffice'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office'
+          description: ''
+    delete:
+      operationId: v1_offices_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this office.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/reports/assignment-summary-by-office/:
+    get:
+      operationId: v1_reports_assignment_summary_by_office_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/dashboard-summary/:
+    get:
+      operationId: v1_reports_dashboard_summary_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/global-search/:
+    get:
+      operationId: v1_reports_global_search_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/inventory/:
+    get:
+      operationId: v1_reports_inventory_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/inventory/export-csv/:
+    get:
+      operationId: v1_reports_inventory_export_csv_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/inventory/export-excel/:
+    get:
+      operationId: v1_reports_inventory_export_excel_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/inventory/export-pdf/:
+    get:
+      operationId: v1_reports_inventory_export_pdf_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/low-stock/:
+    get:
+      operationId: v1_reports_low_stock_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/recent-inventory-activities/:
+    get:
+      operationId: v1_reports_recent_inventory_activities_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/users/:
+    get:
+      operationId: v1_users_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: office
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: role
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - AUDIT
+          - CENTRAL_ADMIN
+          - CENTRAL_PROCUREMENT_STORE
+          - FINANCE
+          - LOCAL_ADMIN
+          - PROVINCIAL_ADMIN
+          - SUPER_ADMIN
+          - WARD_OFFICER
+        description: |-
+          * `SUPER_ADMIN` - Super Admin
+          * `CENTRAL_ADMIN` - Central Admin
+          * `CENTRAL_PROCUREMENT_STORE` - Central Procurement/Store
+          * `PROVINCIAL_ADMIN` - Provincial Admin
+          * `LOCAL_ADMIN` - Local Admin
+          * `WARD_OFFICER` - Ward Officer
+          * `FINANCE` - Finance
+          * `AUDIT` - Audit
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+    post:
+      operationId: v1_users_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/users/{id}/:
+    get:
+      operationId: v1_users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: v1_users_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: v1_users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: v1_users_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    ActionTypeEnum:
+      enum:
+      - CREATE
+      - UPDATE
+      - ASSIGN
+      - RETURN
+      - REPAIR
+      - DISPOSE
+      type: string
+      description: |-
+        * `CREATE` - Create
+        * `UPDATE` - Update
+        * `ASSIGN` - Assign
+        * `RETURN` - Return
+        * `REPAIR` - Repair
+        * `DISPOSE` - Dispose
+    AssetType:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 16
+        label:
+          type: string
+          maxLength: 64
+        is_consumable:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+      - code
+      - id
+      - label
+    BlankEnum:
+      enum:
+      - ''
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        is_consumable:
+          type: boolean
+      required:
+      - id
+      - name
+    ConsumableStock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item:
+          type: integer
+        initial_quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        min_threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        reorder_alert_enabled:
+          type: boolean
+        unit:
+          type: string
+          maxLength: 32
+        stock_status:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - item
+      - stock_status
+    ConsumableStockTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        stock:
+          type: integer
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        balance_after:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        status:
+          type: string
+          maxLength: 32
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        assigned_to:
+          type: integer
+          nullable: true
+        department:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+        image:
+          type: string
+          format: uri
+          nullable: true
+        performed_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        item_name:
+          type: string
+          readOnly: true
+        item_number:
+          type: string
+          readOnly: true
+        performed_by_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - balance_after
+      - created_at
+      - id
+      - item_name
+      - item_number
+      - performed_by
+      - performed_by_name
+      - quantity
+      - stock
+      - transaction_type
+    CustomFieldDefinition:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        label:
+          type: string
+          maxLength: 255
+        field_type:
+          $ref: '#/components/schemas/FieldTypeEnum'
+        required:
+          type: boolean
+        is_unique:
+          type: boolean
+        select_options: {}
+      required:
+      - category
+      - field_type
+      - id
+      - label
+    EmailOrUsernameTokenObtainPair:
+      type: object
+      description: |-
+        Accepts:
+        - email + password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+    FieldTypeEnum:
+      enum:
+      - TEXT
+      - NUMBER
+      - DATE
+      - BOOLEAN
+      - SELECT
+      - FILE
+      type: string
+      description: |-
+        * `TEXT` - Text
+        * `NUMBER` - Number
+        * `DATE` - Date
+        * `BOOLEAN` - Boolean
+        * `SELECT` - Select
+        * `FILE` - File
+    FixedAsset:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item:
+          type: integer
+        asset_tag:
+          type: string
+          maxLength: 64
+        serial_number:
+          type: string
+          nullable: true
+          maxLength: 128
+        purchase_date:
+          type: string
+          format: date
+          nullable: true
+        warranty_expiry_date:
+          type: string
+          format: date
+          nullable: true
+        invoice_file:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - id
+      - item
+    HandoverConditionEnum:
+      enum:
+      - GOOD
+      - FAIR
+      - DAMAGED
+      type: string
+      description: |-
+        * `GOOD` - Good
+        * `FAIR` - Fair
+        * `DAMAGED` - Damaged
+    InventoryAuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item:
+          type: integer
+        item_name:
+          type: string
+          readOnly: true
+        item_number:
+          type: string
+          readOnly: true
+        action_type:
+          $ref: '#/components/schemas/ActionTypeEnum'
+        performed_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        performed_by_name:
+          type: string
+          readOnly: true
+        before_data: {}
+        after_data: {}
+        remarks:
+          type: string
+        attachment:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - action_type
+      - created_at
+      - id
+      - item
+      - item_name
+      - item_number
+      - performed_by
+      - performed_by_name
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        office:
+          type: integer
+        title:
+          type: string
+          maxLength: 255
+        item_number:
+          type: string
+          nullable: true
+          maxLength: 64
+        item_type:
+          $ref: '#/components/schemas/ItemTypeEnum'
+        status:
+          $ref: '#/components/schemas/InventoryItemStatusEnum'
+        image:
+          type: string
+          format: uri
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          maxLength: 16
+        store:
+          type: string
+          maxLength: 128
+        project:
+          type: string
+          maxLength: 128
+        department:
+          type: string
+          maxLength: 128
+        manufacturer:
+          type: string
+          maxLength: 128
+        purchased_date:
+          type: string
+          format: date
+          nullable: true
+        pi_document:
+          type: string
+          format: uri
+          nullable: true
+        warranty_document:
+          type: string
+          format: uri
+          nullable: true
+        description:
+          type: string
+        dynamic_data: {}
+        serial_number:
+          type: string
+          readOnly: true
+        assigned_to:
+          type: string
+          readOnly: true
+        assignment_status:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assigned_to
+      - assignment_status
+      - category
+      - created_at
+      - id
+      - office
+      - serial_number
+      - title
+      - updated_at
+    InventoryItemStatusEnum:
+      enum:
+      - ACTIVE
+      - INACTIVE
+      - DISPOSED
+      - ASSIGNED
+      - UNASSIGNED
+      type: string
+      description: |-
+        * `ACTIVE` - Active
+        * `INACTIVE` - Inactive
+        * `DISPOSED` - Disposed
+        * `ASSIGNED` - Assigned
+        * `UNASSIGNED` - Unassigned
+    ItemAssignment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item:
+          type: integer
+        assigned_to_user:
+          type: integer
+          nullable: true
+        assigned_to_office:
+          type: integer
+          nullable: true
+        assigned_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        handover_date:
+          type: string
+          format: date
+        assign_till:
+          type: string
+          format: date
+          nullable: true
+        handover_condition:
+          $ref: '#/components/schemas/HandoverConditionEnum'
+        handover_letter:
+          type: string
+          format: uri
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ItemAssignmentStatusEnum'
+        returned_at:
+          type: string
+          format: date-time
+          nullable: true
+        return_condition:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReturnConditionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        damage_photo:
+          type: string
+          format: uri
+          nullable: true
+        remarks:
+          type: string
+        item_name:
+          type: string
+          readOnly: true
+        item_number:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assigned_by
+      - created_at
+      - handover_date
+      - id
+      - item
+      - item_name
+      - item_number
+    ItemAssignmentStatusEnum:
+      enum:
+      - ASSIGNED
+      - RETURNED
+      type: string
+      description: |-
+        * `ASSIGNED` - Assigned
+        * `RETURNED` - Returned
+    ItemTypeEnum:
+      enum:
+      - FIXED_ASSET
+      - CONSUMABLE
+      type: string
+      description: |-
+        * `FIXED_ASSET` - Fixed Asset
+        * `CONSUMABLE` - Consumable
+    LevelEnum:
+      enum:
+      - CENTRAL
+      - PROVINCIAL
+      - LOCAL
+      - WARD
+      type: string
+      description: |-
+        * `CENTRAL` - central
+        * `PROVINCIAL` - provincial
+        * `LOCAL` - local
+        * `WARD` - ward
+    NullEnum:
+      enum:
+      - null
+    Office:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        level:
+          $ref: '#/components/schemas/LevelEnum'
+        parent_office:
+          type: integer
+          nullable: true
+        location_code:
+          type: string
+          maxLength: 64
+      required:
+      - id
+      - level
+      - location_code
+      - name
+    PaginatedAssetTypeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetType'
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedConsumableStockList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsumableStock'
+    PaginatedConsumableStockTransactionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsumableStockTransaction'
+    PaginatedCustomFieldDefinitionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomFieldDefinition'
+    PaginatedFixedAssetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedAsset'
+    PaginatedInventoryAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryAuditLog'
+    PaginatedInventoryItemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryItem'
+    PaginatedItemAssignmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemAssignment'
+    PaginatedOfficeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Office'
+    PaginatedUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    PatchedCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        is_consumable:
+          type: boolean
+    PatchedConsumableStock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item:
+          type: integer
+        initial_quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        min_threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        reorder_alert_enabled:
+          type: boolean
+        unit:
+          type: string
+          maxLength: 32
+        stock_status:
+          type: string
+          readOnly: true
+    PatchedConsumableStockTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        stock:
+          type: integer
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        balance_after:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        status:
+          type: string
+          maxLength: 32
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        assigned_to:
+          type: integer
+          nullable: true
+        department:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+        image:
+          type: string
+          format: uri
+          nullable: true
+        performed_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        item_name:
+          type: string
+          readOnly: true
+        item_number:
+          type: string
+          readOnly: true
+        performed_by_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedCustomFieldDefinition:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        label:
+          type: string
+          maxLength: 255
+        field_type:
+          $ref: '#/components/schemas/FieldTypeEnum'
+        required:
+          type: boolean
+        is_unique:
+          type: boolean
+        select_options: {}
+    PatchedFixedAsset:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item:
+          type: integer
+        asset_tag:
+          type: string
+          maxLength: 64
+        serial_number:
+          type: string
+          nullable: true
+          maxLength: 128
+        purchase_date:
+          type: string
+          format: date
+          nullable: true
+        warranty_expiry_date:
+          type: string
+          format: date
+          nullable: true
+        invoice_file:
+          type: string
+          format: uri
+          nullable: true
+    PatchedInventoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        office:
+          type: integer
+        title:
+          type: string
+          maxLength: 255
+        item_number:
+          type: string
+          nullable: true
+          maxLength: 64
+        item_type:
+          $ref: '#/components/schemas/ItemTypeEnum'
+        status:
+          $ref: '#/components/schemas/InventoryItemStatusEnum'
+        image:
+          type: string
+          format: uri
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          maxLength: 16
+        store:
+          type: string
+          maxLength: 128
+        project:
+          type: string
+          maxLength: 128
+        department:
+          type: string
+          maxLength: 128
+        manufacturer:
+          type: string
+          maxLength: 128
+        purchased_date:
+          type: string
+          format: date
+          nullable: true
+        pi_document:
+          type: string
+          format: uri
+          nullable: true
+        warranty_document:
+          type: string
+          format: uri
+          nullable: true
+        description:
+          type: string
+        dynamic_data: {}
+        serial_number:
+          type: string
+          readOnly: true
+        assigned_to:
+          type: string
+          readOnly: true
+        assignment_status:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedItemAssignment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item:
+          type: integer
+        assigned_to_user:
+          type: integer
+          nullable: true
+        assigned_to_office:
+          type: integer
+          nullable: true
+        assigned_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        handover_date:
+          type: string
+          format: date
+        assign_till:
+          type: string
+          format: date
+          nullable: true
+        handover_condition:
+          $ref: '#/components/schemas/HandoverConditionEnum'
+        handover_letter:
+          type: string
+          format: uri
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ItemAssignmentStatusEnum'
+        returned_at:
+          type: string
+          format: date-time
+          nullable: true
+        return_condition:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReturnConditionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        damage_photo:
+          type: string
+          format: uri
+          nullable: true
+        remarks:
+          type: string
+        item_name:
+          type: string
+          readOnly: true
+        item_number:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedOffice:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        level:
+          $ref: '#/components/schemas/LevelEnum'
+        parent_office:
+          type: integer
+          nullable: true
+        location_code:
+          type: string
+          maxLength: 64
+    PatchedUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+        confirm_password:
+          type: string
+          writeOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        full_name_nepali:
+          type: string
+          nullable: true
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        role:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        office:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+          title: Active
+          description: Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+    ReturnConditionEnum:
+      enum:
+      - GOOD
+      - FAIR
+      - DAMAGED
+      type: string
+      description: |-
+        * `GOOD` - Good
+        * `FAIR` - Fair
+        * `DAMAGED` - Damaged
+    RoleEnum:
+      enum:
+      - SUPER_ADMIN
+      - CENTRAL_ADMIN
+      - CENTRAL_PROCUREMENT_STORE
+      - PROVINCIAL_ADMIN
+      - LOCAL_ADMIN
+      - WARD_OFFICER
+      - FINANCE
+      - AUDIT
+      type: string
+      description: |-
+        * `SUPER_ADMIN` - Super Admin
+        * `CENTRAL_ADMIN` - Central Admin
+        * `CENTRAL_PROCUREMENT_STORE` - Central Procurement/Store
+        * `PROVINCIAL_ADMIN` - Provincial Admin
+        * `LOCAL_ADMIN` - Local Admin
+        * `WARD_OFFICER` - Ward Officer
+        * `FINANCE` - Finance
+        * `AUDIT` - Audit
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    TransactionTypeEnum:
+      enum:
+      - STOCK_IN
+      - STOCK_OUT
+      - DAMAGE
+      - ADJUSTMENT
+      type: string
+      description: |-
+        * `STOCK_IN` - Stock In
+        * `STOCK_OUT` - Stock Out
+        * `DAMAGE` - Damage
+        * `ADJUSTMENT` - Adjustment
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+        confirm_password:
+          type: string
+          writeOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        full_name_nepali:
+          type: string
+          nullable: true
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        role:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        office:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+          title: Active
+          description: Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_joined
+      - id
+      - username
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
