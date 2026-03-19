@@ -1,7 +1,5 @@
-import { getApiBaseUrl as resolveApiBaseUrl } from "@/lib/api-base";
-
 export function getApiBaseUrl() {
-  return resolveApiBaseUrl();
+  return "/api/proxy/";
 }
 
 export function downloadCsv(filename: string, headers: string[], rows: Array<Array<string | number | null | undefined>> = []) {
@@ -32,10 +30,9 @@ export async function uploadCsv(endpoint: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    credentials: "same-origin",
     body: formData,
   });
 

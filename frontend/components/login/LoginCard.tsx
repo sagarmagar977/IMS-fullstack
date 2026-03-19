@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useLoginMutation } from "@/app/redux/api";
-import { storeAuthSession } from "@/lib/auth";
+import { persistUserEmail } from "@/lib/auth";
 import { getApiBaseUrl } from "@/lib/api-base";
 
 export function LoginCard() {
@@ -61,11 +61,10 @@ export function LoginCard() {
     setErrorMessage("");
 
     try {
-      const res = await login({ email: email.trim(), password }).unwrap();
-
-      storeAuthSession(res.access, res.refresh, email.trim());
-
-      router.push("/dashboard");
+      await login({ email: email.trim(), password }).unwrap();
+      persistUserEmail(email.trim());
+      router.replace("/dashboard");
+      router.refresh();
     } catch (err: unknown) {
       const message = getLoginErrorMessage(err);
       setErrorMessage(message);

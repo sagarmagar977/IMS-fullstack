@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Globe, LaptopMinimal, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getDisplayName, getStoredUserEmail, USER_EMAIL_KEY } from "@/lib/auth";
+import { getDisplayName, getStoredUserEmail, persistUserEmail } from "@/lib/auth";
 import { getApiBaseUrl } from "@/lib/api-base";
 
 export function SettingTable() {
@@ -65,7 +65,7 @@ export function SettingTable() {
       })
     );
     if (email.trim()) {
-      localStorage.setItem(USER_EMAIL_KEY, email.trim());
+      persistUserEmail(email.trim());
     }
     setStatusMessage("Settings saved for this browser.");
   };

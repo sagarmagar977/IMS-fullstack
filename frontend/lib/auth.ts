@@ -1,38 +1,45 @@
-export const ACCESS_TOKEN_KEY = "accessToken";
-export const REFRESH_TOKEN_KEY = "refreshToken";
-export const USER_EMAIL_KEY = "ims_user_email";
+"use client";
 
-export function storeAuthSession(access: string, refresh: string, email: string) {
+import { USER_EMAIL_COOKIE, USER_EMAIL_KEY } from "@/lib/auth-constants";
+
+export { USER_EMAIL_COOKIE, USER_EMAIL_KEY };
+
+export function persistUserEmail(email: string) {
   if (typeof window === "undefined") {
     return;
   }
 
-  localStorage.setItem(ACCESS_TOKEN_KEY, access);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
-  localStorage.setItem(USER_EMAIL_KEY, email);
+  const normalized = email.trim();
+  if (!normalized) {
+    clearStoredUserEmail();
+    return;
+  }
+
+  localStorage.setItem(USER_EMAIL_KEY, normalized);
+  document.cookie = `${USER_EMAIL_COOKIE}=${encodeURIComponent(normalized)}; Path=/; Max-Age=2592000; SameSite=Lax`;
 }
 
-export function storeAccessToken(access: string) {
+export function clearStoredUserEmail() {
   if (typeof window === "undefined") {
     return;
   }
 
-  localStorage.setItem(ACCESS_TOKEN_KEY, access);
-}
-
-export function clearAuthSession() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_EMAIL_KEY);
+  document.cookie = `${USER_EMAIL_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
 }
 
 export function getStoredUserEmail() {
   if (typeof window === "undefined") {
     return "";
+  }
+
+  const cookieEntry = document.cookie
+    .split("; ")
+    .find((entry) => entry.startsWith(`${USER_EMAIL_COOKIE}=`));
+
+  if (cookieEntry) {
+    const [, value = ""] = cookieEntry.split("=");
+    return decodeURIComponent(value);
   }
 
   return localStorage.getItem(USER_EMAIL_KEY) ?? "";

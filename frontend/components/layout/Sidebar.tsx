@@ -15,7 +15,7 @@ import {
   SquareChartGantt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { clearAuthSession } from "@/lib/auth";
+import { clearStoredUserEmail } from "@/lib/auth";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: House },
@@ -37,10 +37,15 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    clearAuthSession();
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+    }).catch(() => null);
+    clearStoredUserEmail();
     onClose?.();
     router.replace("/login");
+    router.refresh();
   };
 
   return (
