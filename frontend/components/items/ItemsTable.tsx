@@ -62,8 +62,11 @@ export function ItemsTable() {
     }
 
     const nextQuery = params.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
-  }, [assignmentFilter, itemTypeFilter, pathname, router, search, statusFilter]);
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
+  }, [assignmentFilter, itemTypeFilter, pathname, router, search, searchParams, statusFilter]);
 
   const filteredItems = useMemo(() => items, [items]);
 

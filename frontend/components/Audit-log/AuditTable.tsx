@@ -34,7 +34,10 @@ export function AuditTable() {
     if (actionOnly) params.set("action_only", "1");
     else params.delete("action_only");
     const nextQuery = params.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
   }, [actionOnly, page, pageSize, pathname, router, search, searchParams]);
 
   const filteredHistory = useMemo(() => {

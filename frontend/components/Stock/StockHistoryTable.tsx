@@ -43,7 +43,10 @@ export function StockHistoryTable() {
     if (pageSize !== 10) params.set("history_page_size", String(pageSize));
     else params.delete("history_page_size");
     const nextQuery = params.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
   }, [page, pageSize, pathname, router, search, searchParams, typeFilter]);
 
   return (

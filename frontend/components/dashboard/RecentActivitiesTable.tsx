@@ -106,7 +106,10 @@ export function RecentActivitiesTable() {
     if (pageSize !== 10) params.set("activity_page_size", String(pageSize));
     else params.delete("activity_page_size");
     const nextQuery = params.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
   }, [applied, page, pageSize, pathname, router, search, searchParams]);
 
   return (

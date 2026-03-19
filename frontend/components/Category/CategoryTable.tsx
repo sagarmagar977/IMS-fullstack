@@ -48,7 +48,10 @@ export function CategoryTable() {
     if (showWithItemsOnly) params.set("with_items_only", "1");
     else params.delete("with_items_only");
     const nextQuery = params.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
   }, [activeTab, page, pageSize, pathname, router, search, searchParams, showWithItemsOnly]);
 
   const rows = useMemo(() => {

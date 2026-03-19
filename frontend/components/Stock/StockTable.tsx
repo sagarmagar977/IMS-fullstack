@@ -70,7 +70,10 @@ export function StockTable() {
     if (pageSize !== 10) params.set("stock_page_size", String(pageSize));
     else params.delete("stock_page_size");
     const nextQuery = params.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
   }, [page, pageSize, pathname, router, search, searchParams, statusFilter]);
 
   return (
